@@ -1,12 +1,12 @@
 {
   "name": "@local/zed-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "scripts": {
     "test": "node --test test/*.test.mjs"
   },
   "private": true,
   "type": "module",
-  "description": "ZED AI：连接《隔离区》游戏，支持 API/DSH 双接入与聊天陪伴、接管雇佣NPC、联机玩家三种表现形式",
+  "description": "ZED AI：连接《隔离区》游戏，支持 API/DSH 双接入、10 种游戏语言与聊天陪伴/接管雇佣NPC/联机玩家三种表现形式",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

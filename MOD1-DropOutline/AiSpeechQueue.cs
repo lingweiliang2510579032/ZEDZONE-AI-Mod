@@ -48,7 +48,8 @@ namespace Dropoutline
         private static bool Boundary(char c) => c == '。' || c == '！' || c == '？' || c == '!' || c == '?' || c == '；' || c == ';' || c == '\n';
         private static bool MinorBoundary(char c) => c == '，' || c == ',' || c == '：' || c == ':' || c == '、' || c == '～' || c == '~' || c == '—' || c == '–' || c == '…' || char.IsWhiteSpace(c);
         private static bool ClosingTrail(char c) => c == '”' || c == '"' || c == '’' || c == '\'' || c == '」' || c == '』' || c == '）' || c == ')' || c == '】' || c == ']';
-        private static bool IsTokenChar(char c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+        private static bool IsTokenChar(char c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+            (c >= '\u00C0' && c <= '\u024F') || (c >= '\u0400' && c <= '\u04FF') || c == '_' || c == '\'';
         private static int Width(string text, int index) => char.IsHighSurrogate(text[index]) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]) ? 2 : 1;
         private static int PrevScalar(string text, int index) => index >= 2 && char.IsLowSurrogate(text[index - 1]) && char.IsHighSurrogate(text[index - 2]) ? index - 2 : index - 1;
         internal static int Characters(string text)
@@ -99,11 +100,14 @@ namespace Dropoutline
             // A clipped success-looking prefix must never hide a later failure.
             // Prefer the actual negative clause; if its context is too long, keep
             // a conservative status rather than inventing a successful result.
-            string[] negative = { "任务没有执行", "任务未执行", "没有执行", "未执行", "未完成", "没完成", "失败", "无法", "不能", "未确认", "异常", "已取消", "已停止" };
+            string[] negative = {
+                "任务没有执行", "任务未执行", "没有执行", "未执行", "未完成", "没完成", "失败", "无法", "不能", "未确认", "异常", "已取消", "已停止",
+                "not executed", "not done", "not completed", "failed", "cannot", "can't", "unable to", "unconfirmed", "cancelled", "canceled", "stopped"
+            };
             int failureAt = -1;
             foreach (string marker in negative)
             {
-                int at = (original ?? "").IndexOf(marker, StringComparison.Ordinal);
+                int at = (original ?? "").IndexOf(marker, StringComparison.OrdinalIgnoreCase);
                 if (at >= 0 && shown.IndexOf(marker, StringComparison.Ordinal) < 0 && (failureAt < 0 || at < failureAt)) failureAt = at;
             }
             if (failureAt >= 0)

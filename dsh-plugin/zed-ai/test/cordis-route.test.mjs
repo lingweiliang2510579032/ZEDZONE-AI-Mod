@@ -15,8 +15,8 @@ const Connection = new Function('Service', 'assertFetchRoute', `return class ext
 }`)(Service, route => assert.ok(route.path.startsWith('/api/')));
 // Actual browser call + envelope validation. Binary responses are not used by ZED.
 const browser = bundledText('node_modules/@deepseek-ai/dsh-client-connection/lib/client.browser.js');
-const browserStart = browser.indexOf('\t\tconst CHANNEL_PATTERN =');
-const browserEnd = browser.indexOf('\n\t\t//#endregion', browserStart);
+const browserStart = browser.indexOf('const CHANNEL_PATTERN');
+const browserEnd = browser.indexOf('function isLoopbackHostname(', browserStart);
 const browserFactory = new Function('RpcId', 'randomUuid', browser.slice(browserStart, browserEnd) + '\nreturn createWebConnectionRpc;')(x => x, () => 'runtime-test-rpc');
 
 async function setup() {

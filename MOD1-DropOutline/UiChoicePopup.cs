@@ -50,7 +50,7 @@ namespace Dropoutline
                     Close();
                 })));
 
-                float rowH = 54f;
+                float rowH = labels.Length > 8 ? 46f : 54f;
                 float w = 680f;
                 float h = 70f + rowH * labels.Length + 10f;
 

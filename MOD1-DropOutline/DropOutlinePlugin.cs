@@ -22,8 +22,8 @@ namespace Dropoutline
     public class DropOutlinePlugin : BasePlugin
     {
         public const string PluginGUID = "zed.ai";
-        public const string PluginName = "AI伴侣（测试版v0.1）";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginName = "AI伴侣（测试版v0.2）";
+        public const string PluginVersion = "0.2.0";
 
         internal static ManualLogSource L;
         internal static bool ShuttingDown;

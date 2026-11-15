@@ -1,7 +1,7 @@
-"""Resumable Steam UGC publication for AI伴侣（测试版v0.1）.
+"""Resumable Steam UGC publication for AI伴侣（测试版v0.2）.
 Requires explicit --execute. No subscribe/unsubscribe or game-file writes.
-Creates a private draft, uploads privately, attaches required dependency 3834614258,
-verifies details, then publishes publicly and confirms exact public metadata.
+Uploads bilingual metadata (Simplified Chinese + English), verifies content & preview,
+ensures required dependency 3834614258, and confirms public details.
 """
 import argparse
 import ctypes as C
@@ -16,7 +16,8 @@ DLL = Path(r"D:\steam\steamapps\common\ZED ZONE\ZEDZONE_Data\Plugins\x86_64\stea
 APP = 1211600
 OWNER = 76561198272019943
 DEPENDENCY = 3834614258
-TITLE = "AI伴侣（测试版v0.1）"
+TITLE = "AI伴侣（测试版v0.2）"
+TITLE_EN = "AI Companion (Beta v0.2)"
 STATE = ROOT / "publish-state.json"
 
 u64 = C.c_uint64
@@ -110,6 +111,7 @@ class Steam:
         self.failure = f("SteamAPI_ISteamUtils_GetAPICallFailureReason", i32, ptr, u64)
         self.create = f("SteamAPI_ISteamUGC_CreateItem", u64, ptr, u32, i32)
         self.start = f("SteamAPI_ISteamUGC_StartItemUpdate", u64, ptr, u32, u64)
+        self.setuplang = f("SteamAPI_ISteamUGC_SetItemUpdateLanguage", b8, ptr, u64, C.c_char_p)
         self.settitle = f("SteamAPI_ISteamUGC_SetItemTitle", b8, ptr, u64, C.c_char_p)
         self.setdesc = f("SteamAPI_ISteamUGC_SetItemDescription", b8, ptr, u64, C.c_char_p)
         self.setcontent = f("SteamAPI_ISteamUGC_SetItemContent", b8, ptr, u64, C.c_char_p)
@@ -120,6 +122,7 @@ class Steam:
         self.query = f("SteamAPI_ISteamUGC_CreateQueryUGCDetailsRequest", u64, ptr, C.POINTER(u64), u32)
         self.returnchildren = f("SteamAPI_ISteamUGC_SetReturnChildren", b8, ptr, u64, b8)
         self.longdesc = f("SteamAPI_ISteamUGC_SetReturnLongDescription", b8, ptr, u64, b8)
+        self.setlang = f("SteamAPI_ISteamUGC_SetLanguage", b8, ptr, u64, C.c_char_p)
         self.cached = f("SteamAPI_ISteamUGC_SetAllowCachedResponse", b8, ptr, u64, u32)
         self.send = f("SteamAPI_ISteamUGC_SendQueryUGCRequest", u64, ptr, u64)
         self.getdetails = f("SteamAPI_ISteamUGC_GetQueryUGCResult", b8, ptr, u64, u32, ptr)
@@ -163,7 +166,7 @@ class Steam:
             time.sleep(0.1)
         raise TimeoutError(f"Steam async {call} pending; DO NOT recreate item; state preserved")
 
-    def details(self, item):
+    def details(self, item, lang=b"schinese"):
         ids = (u64 * 1)(item)
         q = self.query(self.u, ids, 1)
         if not q or q == 2**64 - 1:
@@ -172,6 +175,8 @@ class Steam:
             if not self.returnchildren(self.u, q, True):
                 raise RuntimeError("SetReturnChildren rejected")
             self.longdesc(self.u, q, True)
+            if not self.setlang(self.u, q, lang):
+                raise RuntimeError("SetLanguage rejected")
             self.cached(self.u, q, 0)
             r = self.wait(self.send(self.u, q), Query, 3401, 60)
             if not r.returned:
@@ -211,7 +216,7 @@ def fingerprint():
     for p in sorted((ROOT / "content").rglob("*")):
         if p.is_file():
             files.append((str(p.relative_to(ROOT)), hashlib.sha256(p.read_bytes()).hexdigest()))
-    for p in [ROOT / "preview.png", ROOT / "description.bbcode.txt"]:
+    for p in [ROOT / "preview.png", ROOT / "description.bbcode.txt", ROOT / "description_en.bbcode.txt"]:
         files.append((p.name, hashlib.sha256(p.read_bytes()).hexdigest()))
     return hashlib.sha256(json.dumps(files, ensure_ascii=False).encode()).hexdigest()
 
@@ -219,15 +224,18 @@ def fingerprint():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--execute", action="store_true")
-    ap.add_argument("--note", default="测试版 v0.1 首次发布")
+    ap.add_argument("--note", default="测试版 v0.2：新增游戏本体 10 语言支持，优化使用说明与设置界面")
     a = ap.parse_args()
     if not a.execute:
         raise SystemExit("No mutations performed. Pass --execute explicitly after reviewing package.")
     assert len(TITLE.encode()) < 129
+    assert len(TITLE_EN.encode()) < 129
     content = (ROOT / "content").resolve()
     preview = (ROOT / "preview.png").resolve()
     desc = (ROOT / "description.bbcode.txt").read_text(encoding="utf8")
+    desc_en = (ROOT / "description_en.bbcode.txt").read_text(encoding="utf8")
     assert len(desc.encode("utf8")) < 7950, f"Description too long: {len(desc.encode('utf8'))}"
+    assert len(desc_en.encode("utf8")) < 7950, f"English description too long: {len(desc_en.encode('utf8'))}"
     if not content.is_dir() or not preview.is_file():
         raise RuntimeError("Content/preview missing")
     if preview.stat().st_size >= 1024 * 1024:
@@ -258,7 +266,7 @@ def main():
             if r.legal:
                 raise RuntimeError("Workshop legal agreement acceptance required; STOP")
         item = int(s["itemId"])
-        d = st.details(item)
+        d = st.details(item, b"schinese")
         s["details"] = d
         save(s)
         if d["owner"] != OWNER or d["consumerApp"] != APP:
@@ -271,6 +279,7 @@ def main():
                 raise RuntimeError("StartItemUpdate invalid")
             vis = 0 if s.get("publicVerified") else 2
             for name, fn, value in [
+                ("updateLanguage", st.setuplang, b"schinese"),
                 ("visibility", st.setvisibility, vis),
                 ("title", st.settitle, TITLE.encode("utf8")),
                 ("description", st.setdesc, desc.encode("utf8")),
@@ -285,15 +294,37 @@ def main():
             r = st.wait(call, Submitted, 3404, 300, h)
             if r.id != item:
                 raise RuntimeError("Wrong upload item")
+            if r.legal:
+                s["legalRequired"] = True
+                save(s)
+                raise RuntimeError("Workshop legal agreement required after submit")
+
+            h2 = st.start(st.u, APP, item)
+            if not h2 or h2 == 2**64 - 1:
+                raise RuntimeError("StartItemUpdate (english) invalid")
+            for name, fn, value in [
+                ("updateLanguage(en)", st.setuplang, b"english"),
+                ("title(en)", st.settitle, TITLE_EN.encode("utf8")),
+                ("description(en)", st.setdesc, desc_en.encode("utf8")),
+            ]:
+                if not fn(st.u, h2, value):
+                    raise RuntimeError("Set " + name + " rejected")
+            call2 = st.submit(st.u, h2, b"v0.2: Add 10-language support and updated usage guide")
+            s["uploadEnCall"] = str(call2)
+            save(s)
+            r2 = st.wait(call2, Submitted, 3404, 180, h2)
+            if r2.id != item:
+                raise RuntimeError("Wrong english upload item")
             s["uploaded"] = True
             s["packageHash"] = digest
-            s["legalRequired"] = bool(r.legal)
+            s["legalRequired"] = bool(r2.legal)
             save(s)
-            if r.legal:
-                raise RuntimeError("Workshop legal agreement required after submit")
-        d = st.details(item)
-        if d["fileSize"] <= 0 or d["previewSize"] <= 0 or d["title"] != TITLE or d["visibility"] not in (0, 2):
-            raise RuntimeError(f"Upload or preview verification failed: {d}")
+            if r2.legal:
+                raise RuntimeError("Workshop legal agreement required after english submit")
+        d = st.details(item, b"schinese")
+        d_en = st.details(item, b"english")
+        if d["fileSize"] <= 0 or d["previewSize"] <= 0 or d["title"] != TITLE or d_en["title"] != TITLE_EN or d["visibility"] not in (0, 2):
+            raise RuntimeError(f"Upload or preview verification failed: zh={d}, en={d_en}")
         if DEPENDENCY not in d["children"]:
             call = st.adddep(st.u, item, DEPENDENCY)
             s["dependencyCall"] = str(call)
@@ -301,17 +332,18 @@ def main():
             r = st.wait(call, Dependency, 3412, 90)
             if r.parent != item or r.child != DEPENDENCY:
                 raise RuntimeError("Wrong dependency result")
-        d = st.details(item)
+        d = st.details(item, b"schinese")
         if DEPENDENCY not in d["children"]:
             raise RuntimeError("Required child not verified; item stays private")
         s["dependencyVerified"] = True
         s["details"] = d
+        s["detailsEn"] = d_en
         save(s)
         if d["visibility"] != 0:
             h = st.start(st.u, APP, item)
             if not st.setvisibility(st.u, h, 0):
                 raise RuntimeError("Set public rejected")
-            call = st.submit(st.u, h, b"Publish AI companion v0.1 with required code mod loader dependency")
+            call = st.submit(st.u, h, b"Publish AI companion v0.2 with required code mod loader dependency")
             s["publicCall"] = str(call)
             save(s)
             r = st.wait(call, Submitted, 3404, 180, h)
@@ -319,11 +351,13 @@ def main():
                 s["legalRequired"] = True
                 save(s)
                 raise RuntimeError("Legal required on public submit")
-        d = st.details(item)
-        if d["visibility"] != 0 or DEPENDENCY not in d["children"] or d["owner"] != OWNER or d["title"] != TITLE:
-            raise RuntimeError(f"Final public verification failed: {d}")
+        d = st.details(item, b"schinese")
+        d_en = st.details(item, b"english")
+        if d["visibility"] != 0 or DEPENDENCY not in d["children"] or d["owner"] != OWNER or d["title"] != TITLE or d_en["title"] != TITLE_EN:
+            raise RuntimeError(f"Final public verification failed: zh={d}, en={d_en}")
         s["publicVerified"] = True
         s["details"] = d
+        s["detailsEn"] = d_en
         s["url"] = f"https://steamcommunity.com/sharedfiles/filedetails/?id={item}"
         save(s)
         print(json.dumps(s, ensure_ascii=False, indent=2))

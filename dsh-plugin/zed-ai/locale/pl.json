@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "ZED AI",
+    "description": "Łączy Harness z grą ZED ZONE: odczytuje sytuację towarzysza AI, wysyła decyzje, przekazuje czat gracza i utrzymuje pamięć postaci."
+  }
+}

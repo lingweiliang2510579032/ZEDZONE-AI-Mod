@@ -206,3 +206,20 @@ test('GameDetails displays 3 presence modes and netPlayer identity', async () =>
   assert.ok(nText.includes('API 模式'));
   npcPanel.cleanup();
 });
+
+test('GameDetails switches to English labels when gameLanguage is en and avoids internal dev terms', async () => {
+  const enPanel = await panelHarness(async () => ({ ok: true, value: { enabled: true, connected: true, game: {
+    worldActive: true, runMode: 'dsh', protocol: 'agent-dsh', saveId: 's3', ageSeconds: 2,
+    context: { npc: 'Companion', player: 'Survivor', mode: 'player', networkRole: 'Singleplayer', gameLanguage: 'en' },
+    network: { online: false },
+    avatar: { present: false, behavior: 'follow' },
+  } } }));
+  await enPanel.flush();
+  const enTree = enPanel.gameDetails();
+  const enText = enPanel.textOf(enTree);
+  assert.equal(enTree.props['aria-label'], 'Game Sync & Character Info');
+  assert.ok(enText.includes('Game Sync'));
+  assert.ok(enText.includes('Co-op Player Mode'));
+  assert.ok(!enText.includes('MpCharacters'));
+  enPanel.cleanup();
+});

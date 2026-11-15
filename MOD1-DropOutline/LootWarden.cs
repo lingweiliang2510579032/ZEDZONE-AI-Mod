@@ -128,9 +128,33 @@ namespace Dropoutline
             var chosen = _items[bestId];
             if (allowSpeak) { chosen.reminders++; _lastRemind = now; }
 
-            string name = string.IsNullOrEmpty(chosen.name) ? "东西" : chosen.name;
-            string when = bestAge > 150f ? "好一会儿" : "一分多钟";
-            return $"脚边那件「{name}」躺了{when}了，不捡？";
+            string name = string.IsNullOrEmpty(chosen.name)
+                ? ModLocalization.Pick("东西", "item", "Gegenstand", "objeto", "objet", "アイテム", "아이템", "przedmiot", "item", "предмет")
+                : chosen.name;
+            bool longWait = bestAge > 150f;
+            return longWait
+                ? ModLocalization.Pick(
+                    $"脚边那件「{name}」躺了好一会儿了，不捡？",
+                    $"\"{name}\" has been sitting by your feet for a while — pick it up?",
+                    $"„{name}“ liegt schon eine Weile vor deinen Füßen — mitnehmen?",
+                    $"\"{name}\" lleva rato en el suelo — ¿lo recoges?",
+                    $"« {name} » traîne à vos pieds depuis un moment — on le prend ?",
+                    $"足元の「{name}」、ずっと落ちたままですよ。拾いますか？",
+                    $"발밑의 \"{name}\"이(가) 한참째 떨어져 있어요. 안 주울 건가요?",
+                    $"„{name}” leży pod nogami już od dłuższego czasu — podniesiesz?",
+                    $"\"{name}\" está no chão há um tempinho — vai pegar?",
+                    $"«{name}» уже давно лежит под ногами — подберёшь?")
+                : ModLocalization.Pick(
+                    $"脚边那件「{name}」躺了一分多钟了，不捡？",
+                    $"\"{name}\" has been on the ground for over a minute — pick it up?",
+                    $"„{name}“ liegt schon über eine Minute am Boden — mitnehmen?",
+                    $"\"{name}\" lleva más de un minuto en el suelo — ¿lo recoges?",
+                    $"« {name} » est au sol depuis plus d'une minute — on le prend ?",
+                    $"足元の「{name}」、1分ほど落ちたままですよ。拾いますか？",
+                    $"발밑의 \"{name}\"이(가) 1분 넘게 떨어져 있어요. 안 주울 건가요?",
+                    $"„{name}” leży na ziemi ponad minutę — podniesiesz?",
+                    $"\"{name}\" está no chão há mais de um minuto — vai pegar?",
+                    $"«{name}» лежит на земле уже больше минуты — подберёшь?");
         }
 
         /// <summary>附近（可感知范围内）物品清单：名字×数量，给外部大脑看，不消耗提醒次数。</summary>

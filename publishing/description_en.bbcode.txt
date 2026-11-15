@@ -1,0 +1,36 @@
+[h1]AI Companion (Beta v0.2)[/h1]
+An open-source AI companion mod for [b]ZED ZONE[/b] (MIT License), featuring [b]full support for all 10 official game languages[/b], dual connection backends ([b]Direct LLM API[/b] or [b]DSH Local Agent[/b]), and 3 distinct companion forms ([b]Chat Companion / Hired NPC / Co-op Player[/b]).
+
+[h2]1. Prerequisites & Installation[/h2]
+[olist]
+[*][b]Required Dependency[/b]: Subscribe to [b]ZED ZONE Code Mod Loader (3834614258)[/b] first, open its Workshop folder, and run [code]install.cmd[/code] once to finish framework setup.
+[*]Subscribe to this mod, enable it in the in-game Mod list, and restart the game.
+[*][b]10 Supported Languages[/b]: Simplified Chinese, English, Deutsch, Español, Français, 日本語, 한국어, Polski, Português, and Русский. Automatically follows your game language or can be switched manually in settings.
+[/olist]
+
+[h2]2. How to Open Settings & Chat[/h2]
+[list]
+[*][b]Mod Settings[/b]: Press [code]ESC[/code] → [b]Options[/b] → [b]AI Companion[/b] → [b]Open AI Companion Settings[/b] to open the dedicated 4-tab configuration window.
+[*][b]In-Game Chat[/b]: Press [b]Enter[/b] in both Singleplayer and Multiplayer to open the left-side official chat box and talk directly with your AI companion. Replies wrap cleanly without awkward cutoffs.
+[/list]
+
+[h2]3. Connection Modes[/h2]
+[olist]
+[*][b]API Mode (Recommended for most players)[/b]: Choose Chat Completions, Anthropic Messages, OpenAI Responses, or local Ollama under Tab 3, fill in your Base URL, Model name, and API Key (encrypted locally via Windows DPAPI), then click [b]Test Connection[/b].
+[*][b]DSH Mode (DeepSeek Harness)[/b]: Switch Connection Mode to DSH on Tab 1 and install the matching [code]zed-ai-dsh-plugin-v0.2.zip[/code] (from GitHub Releases) in DSH Desktop. Not required if you only use API Mode.
+[/olist]
+
+[h2]4. Three Companion Forms & Solo/Co-op Adaptation[/h2]
+[list]
+[*][b]1. Chat Companion[/b]: Natural conversation in the left chat box with anti-repetition variety, plus proactive reminders for HP, hunger/thirst, low flashlight battery (<20%), unspent points, and nearby threats. [b]Strictly Fair Play[/b]: AI can only see unlocked recipes, carried items, and containers already opened within camera view on the same floor. Write permissions (sorting/crafting/discarding) are [b]disabled by default[/b] in Tab 4; in co-op, companion tasks stay read-only/highlight-only to prevent desyncs.
+[*][b]2. Hired NPC[/b]: Takes over recruited teammate NPCs strictly within official game mechanics (Follow, Hold, Overwatch, Fire/Hold Fire, Melee/Ranged Preference, Loot Nearby, Pickup Item, Heal Player, Throw Grenade). Never pretends to build, craft, or drive. Active for Singleplayer or Co-op Host only.
+[*][b]3. Co-op Player[/b]: Spawns a dedicated co-op player profile for the AI to join your room, fight alongside you, scavenge, and chat. In singleplayer, you can enable auto-hosting or click [b]Host Co-op Room[/b] so the AI joins as an active teammate.
+[/list]
+
+[h2]5. Open Source & Feedback[/h2]
+[list]
+[*][b]License[/b]: MIT License
+[*][b]GitHub Repository (Source, DLL & DSH Plugin Releases)[/b]:
+https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod
+[*]Found a bug or have suggestions? Please report them via [b]GitHub Issues[/b] or right here in the [b]Steam Workshop comments / discussions[/b]!
+[/list]

@@ -75,7 +75,7 @@ namespace Dropoutline
                 phText.font = GetGameFont();
                 phText.fontSize = 22;
                 phText.color = new Color(1f, 1f, 1f, 0.35f);
-                phText.text = "对队友说点什么…（Enter 发送，Esc 取消）";
+                phText.text = PlaceholderText();
                 phText.alignment = TextAnchor.MiddleLeft;
                 phText.raycastTarget = false;
 
@@ -177,9 +177,11 @@ namespace Dropoutline
         public static void Log(string who, string text)
         {
             if (string.IsNullOrEmpty(text)) return;
-            var line = who == "玩家"
-                ? "<color=#7fd1ff>" + who + "：</color>" + text
-                : "<color=#ffd479>" + who + "：</color>" + text;
+            bool isPlayer = who == "玩家" || who == ModLocalization.DefaultPlayerTitle() || who == AiCompanion.PlayerName();
+            string sep = ModLocalization.IsZh || ModLocalization.Current == "ja" ? "：" : ": ";
+            var line = isPlayer
+                ? "<color=#7fd1ff>" + who + sep + "</color>" + text
+                : "<color=#ffd479>" + who + sep + "</color>" + text;
             History.Add(line);
             while (History.Count > LogCapacity) History.RemoveAt(0);
             if (_logText == null) return;
@@ -200,8 +202,22 @@ namespace Dropoutline
 
         internal static Font UiFont => GetGameFont();
 
+        private static string PlaceholderText() => ModLocalization.Pick(
+            "对队友说点什么…（Enter 发送，Esc 取消）",
+            "Say something to your team... (Enter to send, Esc to cancel)",
+            "Sag deinem Team etwas... (Enter senden, Esc abbrechen)",
+            "Di algo al equipo... (Enter enviar, Esc cancelar)",
+            "Dites quelque chose... (Entrée envoyer, Échap annuler)",
+            "仲間に話しかける…（Enter送信、Escキャンセル）",
+            "동료에게 말하기... (Enter 전송, Esc 취소)",
+            "Powiedz coś drużynie... (Enter wyślij, Esc anuluj)",
+            "Diga algo ao grupo... (Enter enviar, Esc cancelar)",
+            "Скажите что-нибудь... (Enter — отправить, Esc — отмена)");
+
         private static Font GetGameFont()
         {
+            var uiFont = ModSettingsUi.UiFont();
+            if (uiFont != null) return uiFont;
             try
             {
                 foreach (var t in Resources.FindObjectsOfTypeAll<Text>())
@@ -254,6 +270,14 @@ namespace Dropoutline
         {
             if (_root == null) return;
             _open = true;
+            var f = GetGameFont();
+            if (_hint != null)
+            {
+                _hint.text = PlaceholderText();
+                if (f != null) _hint.font = f;
+            }
+            if (f != null && _field != null && _field.textComponent != null) _field.textComponent.font = f;
+            if (f != null && _logText != null) _logText.font = f;
             _root.SetActive(true);
             _field.text = "";
             _field.Select();
@@ -275,7 +299,7 @@ namespace Dropoutline
             if (!_open) return;
             if (!string.IsNullOrEmpty(text) && text.Trim().Length > 0)
             {
-                Log("玩家", text.Trim());
+                Log(AiCompanion.PlayerName(), text.Trim());
                 AiCompanion.SubmitPlayerChat(text);
             }
             Close();

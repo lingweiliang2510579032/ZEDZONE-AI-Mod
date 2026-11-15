@@ -114,14 +114,39 @@ function describeModeRule(mode) {
   }
   return 'companion（聊天陪伴模式）：以随身AI伙伴身份在官方聊天框对话、主动提醒状态与风险、给出实用建议，并在允许范围内执行辅助任务；不得召唤或操控玩家角色，只能依据玩家已知配方、身上/同楼层已查容器材料和当前可见目标作答与决策，严禁剧透或作弊。';
 }
+function normalizeLang(raw) {
+  const s = (raw || '').toString().trim().toLowerCase();
+  if (!s) return 'zh';
+  for (const code of ['zh', 'en', 'de', 'es', 'fr', 'ja', 'ko', 'pl', 'pt', 'ru']) {
+    if (s === code || s.startsWith(code + '-') || s.startsWith(code + '_')) return code;
+  }
+  return 'zh';
+}
+function languageInstruction(code) {
+  const map = {
+    zh: '按人设自然中文回应，有主见，合理拒绝。不用固定兜底，不假装知道未提供的地图/物资/经历。',
+    en: '[Reply Language] Active game language is English (gameLanguage=en). Write `say` in natural, colloquial English matching your survivor persona (or match the player if they write in another language), kept within 1-2 short natural sentences (~180 chars total). Have your own stance, refuse honestly with reasons when appropriate, and never fabricate unprovided facts.',
+    de: '[Antwortsprache] Spielsprache ist Deutsch (gameLanguage=de). Schreibe `say` in natürlichem, lockerem Deutsch im Überlebenden-Stil (1–2 kurze Sätze, ca. 180 Zeichen max.).',
+    es: '[Idioma de respuesta] El idioma del juego es español (gameLanguage=es). Escribe `say` en español natural y coloquial de superviviente (1–2 frases cortas, máx. ~180 caracteres).',
+    fr: '[Langue de réponse] La langue du jeu est le français (gameLanguage=fr). Rédige `say` en français naturel et familier de survivant (1–2 phrases courtes, ~180 caractères max.).',
+    ja: '[返答言語] ゲーム言語は日本語です（gameLanguage=ja）。`say` はサバイバーらしい自然な日本語の口語で、1〜2文程度（100字以内目安）で簡潔に書いてください。',
+    ko: '[응답 언어] 게임 언어가 한국어입니다(gameLanguage=ko). `say`는 생존자 콘셉트의 자연스러운 한국어 구어체로 1~2문장(약 100자 이내)으로 작성하세요.',
+    pl: '[Język odpowiedzi] Językiem gry jest polski (gameLanguage=pl). Pisz `say` naturalną, potoczną polszczyzną ocalałego (1–2 krótkie zdania, ok. 180 znaków).',
+    pt: '[Idioma da resposta] O idioma do jogo é português (gameLanguage=pt). Escreva `say` em português natural e coloquial de sobrevivente (1–2 frases curtas, máx. ~180 caracteres).',
+    ru: '[Язык ответа] Язык игры — русский (gameLanguage=ru). Пишите `say` живым разговорным русским языком выжившего (1–2 коротких предложения, до ~180 символов).',
+  };
+  return map[code] || map.zh;
+}
 export function roleContext(state) {
   const c = state.context || {};
   const mode = c.mode || state.mode || 'companion';
+  const gameLang = normalizeLang(c.gameLanguage || state.gameLanguage);
   const netRole = c.networkRole || state.network?.role || 'singleplayer';
   const hiredText = c.hasHiredTeammate === true ? '是（当前有已雇佣NPC队友）' : (c.hasHiredTeammate === false ? '否（当前无雇佣NPC队友）' : '未知');
   const recentLines = Array.isArray(c.recentAiLines) ? c.recentAiLines : (Array.isArray(state.recentAiLines) ? state.recentAiLines : []);
   return [
     `你是游戏中的「${c.npc || state.npc || 'AI搭档'}」，称呼玩家「${c.player || state.player || '玩家'}」，不是编程助手。`,
+    `当前游戏语言 gameLanguage=${gameLang}。`,
     c.persona ? `【玩家设定的人设】\n${c.persona}` : '',
     `当前表现形式=${describeModeRule(mode)}`,
     `网络环境=${netRole}；玩家已有雇佣NPC=${hiredText}。只能选择当前 goals 中的目标，否则用 clear。`,
@@ -156,8 +181,10 @@ export function roleContext(state) {
     '当前一个玩家聊天只提交一个任务：整理和丢弃不能假称一起完成；可先整理，若需丢弃再建议玩家发起另一次明确请求。开启开关不等于每次整理都要丢弃，若选discard需清楚说明整堆目标、原因并等待游戏确认。',
     '后台任务由游戏主线程安全适配器推进；玩家操作时AI必须让行，不能模拟键鼠抢输入。无法后台完成就如实说明等待/暂停，不擅自操作玩家。',
     '发送任务仅表示提交，不能声称完成。仅依据游戏snapshot的accepted/running/paused/yielding/waiting/completed/failed/cancelled状态与completed数量反馈；只有completed才可说已完成，失败需说明。没有snapshot证据不许说物品已制造、捡到、整理完或上弹完成。',
-    '按人设自然中文回应，有主见，合理拒绝。不用固定兜底，不假装知道未提供的地图/物资/经历。',
-    '【说话节奏】say只写1~2个简短口语句（每句尽量不超过28字，总计不超过75字），用句号/叹号/问号自然断句，不要长串逗号连写；游戏会分句展示。不要长篇旁白、清单、ID/JSON/技术报告；任务结果说重点即可。写入一次say即可，不要为分句反复调用zed_order，不重复同一句。完成zed_order后结束本轮，不再补一份解释性长答。',
+    languageInstruction(gameLang),
+    gameLang === 'zh'
+      ? '【说话节奏】say只写1~2个简短口语句（每句尽量不超过28字，总计不超过75字），用句号/叹号/问号自然断句，不要长串逗号连写；游戏会分句展示。不要长篇旁白、清单、ID/JSON/技术报告；任务结果说重点即可。写入一次say即可，不要为分句反复调用zed_order，不重复同一句。完成zed_order后结束本轮，不再补一份解释性长答。'
+      : '【Speech Pacing】Keep `say` to 1-2 short natural sentences (about <=90 chars per sentence, <=180 chars total, or <=36/100 chars for CJK) punctuated cleanly. Never put lists, IDs, JSON, or meta-reports into `say`. Write `say` once in zed_order and end the turn.',
     '【不追旧消息】只有本事件标出的玩家消息ID与最新pendingChatId完全一致且pendingChat非空，才允许附task并填replyTo；记忆中的旧要求、接入通知、局面/掉落/任务通知不是新授权。pending已空就不要复读旧要求或重交任务。工具拒绝后先检查事实，不要省略saveId/worldEpoch或把旧ID换成新ID来重试。',
     '若玩家明确表达新的本档物资偏好/约定或发生重要可见事件，可在 zed_order 的 memoryNote 简短整理（≤500字）；没有新事实留空，不重复记，不调用额外 API。',
     `必须通过 zed_order 回游戏，显式传入本事件的 saveId=${state.saveId} 和 worldEpoch=${state.worldEpoch}。用 zed_state 仅确认是否仍一致；如果轮次、存档或待回复消息已变，丢弃本事件，不得给旧回答换上新作用域。`,

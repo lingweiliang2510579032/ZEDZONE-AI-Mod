@@ -57,6 +57,7 @@ namespace Dropoutline
         internal static ConfigEntry<bool> CfgCoopDriveLocalWhenClient;
         internal static ConfigEntry<string> CfgCoopRoomCode;
         internal static ConfigEntry<bool> CfgPlayerAutoHost;
+        internal static ConfigEntry<string> CfgUiLanguage;
 
         // ── 运行时 ──
         private static float _nextTick;
@@ -90,40 +91,26 @@ namespace Dropoutline
         private static float _nextMenuDshTick;
 
         /// <summary>接入模式：API 直连大模型 / DSH 本地大肥鱼 Agent。</summary>
-        public static readonly string[] RunModeLabels =
-        {
-            "API 模式（模组直连大模型接口）",
-            "DSH 模式（连接本地大肥鱼 Agent）",
-        };
+        public static string[] RunModeLabels => ModLocalization.RunModeLabels();
         public static readonly string[] RunModeValues = { "api", "dsh" };
 
         /// <summary>API 模式下的协议下拉（仅 API 模式可见）。</summary>
-        public static readonly string[] ApiProtocolLabels =
-        {
-            "Chat Completions (/chat/completions)",
-            "Anthropic Messages (/v1/messages)",
-            "Responses (/responses)",
-            "Ollama 本地 (/api/chat)",
-        };
+        public static string[] ApiProtocolLabels => ModLocalization.ApiProtocolLabels();
         public static readonly string[] ApiProtocolValues = { "chat", "anthropic", "responses", "ollama" };
 
         /// <summary>表现形式：聊天陪伴 / 接管雇佣 NPC / 玩家模式（作为正常联机玩家加入）。</summary>
-        public static readonly string[] ModeLabels =
-        {
-            "聊天陪伴模式（官方聊天框对话 · 动态提醒 · 建议与辅助）",
-            "接管雇佣NPC模式（按官方机制指挥游戏内已招募队友）",
-            "玩家模式（创建独立AI角色 · 作为正常玩家加入联机）",
-        };
+        public static string[] ModeLabels => ModLocalization.ModeLabels();
         public static readonly string[] ModeValues = { "companion", "npc", "player" };
 
-        public static readonly string[] ProtocolLabels =
+        public static string[] ProtocolLabels
         {
-            "Chat Completions (/chat/completions)",
-            "Anthropic Messages (/v1/messages)",
-            "Responses (/responses)",
-            "Ollama 本地 (/api/chat)",
-            "本地 Agent · DSH（文件桥）",
-        };
+            get
+            {
+                var api = ModLocalization.ApiProtocolLabels();
+                var dsh = ModLocalization.RunModeLabels()[1];
+                return new[] { api[0], api[1], api[2], api[3], dsh };
+            }
+        }
 
         public static readonly string[] ProtocolValues =
         {
@@ -173,15 +160,7 @@ namespace Dropoutline
         public static bool IsNpcMode() => NormalizedAiMode() == "npc";
         public static bool IsPlayerMode() => NormalizedAiMode() == "player";
 
-        public static string AiModeDisplayName(string mode = null)
-        {
-            switch ((mode ?? NormalizedAiMode()).Trim().ToLowerInvariant())
-            {
-                case "npc": return "接管雇佣NPC模式";
-                case "player": return "玩家模式（联机AI玩家）";
-                default: return "聊天陪伴模式";
-            }
-        }
+        public static string AiModeDisplayName(string mode = null) => ModLocalization.AiModeShortName(mode ?? NormalizedAiMode());
 
         /// <summary>当前网络角色标签（区分单人 / 联机房主 / 联机客户端 / 大厅）。</summary>
         public static string GetNetworkRoleLabel()
@@ -191,19 +170,19 @@ namespace Dropoutline
                 var nm = ZedZone.Net.NetworkManager.instance;
                 if (!AiSaveContext.Active)
                 {
-                    if (ZedZone.Net.NetLobby.inLobbyAsClient) return "联机大厅（客户端）";
-                    if (ZedZone.Net.NetLobby.isOpenAsHost) return "联机大厅（房主）";
-                    return "主菜单";
+                    if (ZedZone.Net.NetLobby.inLobbyAsClient) return ModLocalization.NetworkRoleLabel("lobby_client");
+                    if (ZedZone.Net.NetLobby.isOpenAsHost) return ModLocalization.NetworkRoleLabel("lobby_host");
+                    return ModLocalization.NetworkRoleLabel("menu");
                 }
                 if (nm != null && ZedZone.Net.NetworkManager.isOnline)
                 {
-                    if (ZedZone.Net.NetworkManager.isHost) return "联机房主（Host）";
-                    if (ZedZone.Net.NetworkManager.isClient) return "联机客户端（Client）";
-                    return "联机模式";
+                    if (ZedZone.Net.NetworkManager.isHost) return ModLocalization.NetworkRoleLabel("host");
+                    if (ZedZone.Net.NetworkManager.isClient) return ModLocalization.NetworkRoleLabel("client");
+                    return ModLocalization.NetworkRoleLabel("online");
                 }
             }
             catch { }
-            return "单人游戏（Offline）";
+            return ModLocalization.NetworkRoleLabel("singleplayer");
         }
 
         public static bool IsMultiplayerClientOnly()
@@ -457,6 +436,8 @@ namespace Dropoutline
                 "最近使用或将要加入的多人联机房间码");
             CfgPlayerAutoHost = cfg.Bind("AI联机陪玩", "单机自动开启本地联机房", true,
                 "处于「玩家模式」但当前处于单人游戏时，自动将当前存档开启为本地联机房主模式，以便 AI 作为正常玩家角色加入");
+            CfgUiLanguage = cfg.Bind("General", "UiLanguage", "auto",
+                "Mod UI & AI language: auto / zh / en / de / es / fr / ja / ko / pl / pt / ru");
 
             // 兼容旧配置迁移：首次升级自动从 接口协议 / 决策后端 派生运行模式与 API 协议
             if (string.IsNullOrEmpty(CfgApiProtocol.Value))
@@ -466,7 +447,9 @@ namespace Dropoutline
             CfgAiMode.Value = NormalizedAiMode();
             SetRunMode(CfgRunMode.Value);
             AiCoopPlayer.SetBehaviorMode(CfgCoopBehavior.Value);
+            ModLocalization.Refresh(true);
 
+            CfgUiLanguage.SettingChanged += (_, __) => ModLocalization.Refresh(true);
             CfgRunMode.SettingChanged += (_, __) => { if (!_syncingConfig) SetRunMode(CfgRunMode.Value); };
             CfgApiProtocol.SettingChanged += (_, __) => { if (!_syncingConfig) SetApiProtocol(CfgApiProtocol.Value); };
             CfgAiMode.SettingChanged += (_, __) => { if (!_syncingConfig) OnModeChanged(CfgAiMode.Value); };
@@ -554,9 +537,10 @@ namespace Dropoutline
                 var text =
                     "# ZED ZONE AI 搭档 · 接入说明（本机自动生成）\n\n" +
                     "本目录：" + dir + "\n\n" +
-                    "## 方式一：API Key 直连\n" +
-                    "游戏内 ESC → 游戏选项 → MOD 设置 → MOD2 · AI 搭档 → 接口协议，选 Chat Completions / Anthropic Messages / " +
+                    "## 方式一 / Mode 1: API Key\n" +
+                    "游戏内 ESC → 游戏选项 → AI 伙伴 → 打开 AI 伙伴设置 → 接口协议（API Protocol），选 Chat Completions / Anthropic Messages / " +
                     "Responses / Ollama 之一，再填 API 地址、模型名、API Key（DPAPI 加密保存，配置里只有密文）。\n\n" +
+                    "In-game ESC -> Options -> AI Companion -> Open AI Companion Settings -> API Protocol.\n\n" +
                     "## 方式二：本地 Agent（DSH 等，文件桥）\n" +
                     "接口协议选「本地 Agent · DSH（文件桥）」。MOD 会持续写：\n" +
                     "- ai-state.json：当前局面（血量/饥渴/疲劳、威胁数、可用目标 goals、待回应的 pendingChat、最近对话）\n" +
@@ -698,7 +682,8 @@ namespace Dropoutline
                 "\",\"modeLabel\":\"" + MiniJson.Escape(AiModeDisplayName()) + "\",\"networkRole\":\"" + MiniJson.Escape(GetNetworkRoleLabel()) +
                 "\",\"hasHiredTeammate\":" + (FindTeammates(true).Count > 0 ? "true" : "false") +
                 ",\"memoryContext\":\"" + MiniJson.Escape(AiSaveContext.Active ? AiMemory.BuildContext(_pendingPlayerChat ?? "", 12) : "") +
-                "\",\"moodHint\":\"" + MiniJson.Escape(AiSaveContext.Active ? AiMemory.MoodHint() : "") + "\"}";
+                "\",\"moodHint\":\"" + MiniJson.Escape(AiSaveContext.Active ? AiMemory.MoodHint() : "") +
+                "\",\"gameLanguage\":\"" + MiniJson.Escape(ModLocalization.Current) + "\"}";
         }
 
         private static void AtomicText(string path, string text)
@@ -934,7 +919,17 @@ namespace Dropoutline
                         _lastDecisionTime = Time.unscaledTime;
                         if (needByChat)
                         {
-                            Say(agent, "我这边信号断了，先按老规矩来。");
+                            Say(agent, ModLocalization.Pick(
+                                "我这边信号断了，先按老规矩来。",
+                                "Signal dropped on my end — sticking to standard orders.",
+                                "Signal weg — mache wie gewohnt weiter.",
+                                "Se cortó la señal; sigo las órdenes habituales.",
+                                "Signal perdu ; je continue comme d'habitude.",
+                                "こちら側の信号が切れました。通常通り動きます。",
+                                "신호가 끊겼어, 평소대로 움직일게.",
+                                "Urwał się sygnał — działam jak dotąd.",
+                                "O sinal caiu aqui; seguindo o plano normal.",
+                                "Связь прервалась — действую как обычно."));
                             _pendingPlayerChat = null; _pendingChatId = "";
                         }
                         ApplyHeuristic(agent);
@@ -970,25 +965,32 @@ namespace Dropoutline
         {
             try
             {
-                if (CfgAiEnabled == null || !CfgAiEnabled.Value) return "已关闭";
-                string run = IsDshMode ? "DSH本地Agent" : $"API({Protocol})";
+                if (CfgAiEnabled == null || !CfgAiEnabled.Value)
+                    return ModLocalization.Pick("已关闭", "Disabled", "Deaktiviert", "Desactivado", "Désactivé", "無効", "비활성화", "Wyłączono", "Desativado", "Выключено");
+                string run = IsDshMode
+                    ? ModLocalization.Pick("DSH本地Agent", "DSH Local Agent", "DSH Lokaler Agent", "Agente DSH", "Agent DSH", "DSHローカルAgent", "DSH 로컬 에이전트", "Lokalny Agent DSH", "Agente DSH", "Локальный агент DSH")
+                    : $"API({Protocol})";
                 string aiMode = NormalizedAiMode();
                 string netRole = GetNetworkRoleLabel();
                 if (aiMode == "companion")
-                    return $"{run} · 聊天陪伴模式 · {netRole}";
+                    return $"{run} · {AiModeDisplayName("companion")} · {netRole}";
                 if (aiMode == "player")
-                    return $"{run} · 玩家模式 · {AiCoopPlayer.GetAvatarSummary()} · {AiCoopPlayer.GetRoomSummary()}";
+                    return $"{run} · {AiModeDisplayName("player")} · {AiCoopPlayer.GetAvatarSummary()} · {AiCoopPlayer.GetRoomSummary()}";
 
                 var agents = FindTeammates(true);
-                if (agents.Count == 0) return $"{run} · 雇佣NPC模式 · 暂无已招募队友 · {netRole}";
+                if (agents.Count == 0)
+                    return $"{run} · {AiModeDisplayName("npc")} · " + ModLocalization.Pick(
+                        "暂无已招募队友", "No hired NPC yet", "Kein angeheuerter NPC", "Sin NPC contratado", "Aucun PNJ recruté",
+                        "雇用済みNPCなし", "고용된 NPC 없음", "Brak najętego NPC", "Nenhum NPC contratado", "Нет нанятого NPC") + $" · {netRole}";
                 var a = agents[0];
                 string npcName = a.npcData?.characterData?.characterName;
                 if (string.IsNullOrEmpty(npcName))
                     npcName = a.npcData != null && !string.IsNullOrEmpty(a.npcData.npcGUID)
-                        ? a.npcData.npcGUID.Substring(0, Math.Min(6, a.npcData.npcGUID.Length)) : "雇佣队友";
-                return $"{run} · 雇佣NPC({agents.Count}名) · {npcName}:{CurrentGoalName(a)} · {netRole}";
+                        ? a.npcData.npcGUID.Substring(0, Math.Min(6, a.npcData.npcGUID.Length))
+                        : ModLocalization.Pick("雇佣队友", "Hired NPC", "Söldner", "NPC aliado", "PNJ allié", "雇用仲間", "고용 동료", "Najemnik", "NPC aliado", "Наёмник");
+                return $"{run} · {AiModeDisplayName("npc")}({agents.Count}) · {npcName}:{CurrentGoalName(a)} · {netRole}";
             }
-            catch { return "状态未知"; }
+            catch { return ModLocalization.Pick("状态未知", "Status unknown", "Status unbekannt", "Estado desconocido", "État inconnu", "状態不明", "상태 알 수 없음", "Stan nieznany", "Status desconhecido", "Неизвестно"); }
         }
 
         // ───────────────────────── 连接自检 ─────────────────────────
@@ -1002,28 +1004,47 @@ namespace Dropoutline
         {
             if (_testBusy) return;
             _testBusy = true;
-            TestStatus = "测试中…";
+            TestStatus = ModLocalization.Pick("测试中…", "Testing...", "Teste...", "Probando...", "Test...", "テスト中…", "테스트 중...", "Testowanie...", "Testando...", "Тест...");
 
             LlmSettings st = BuildSettings();
             if (!st.IsConfigured)
             {
-                TestStatus = "未配置完整：需要 BaseUrl / 模型 / Key";
+                TestStatus = ModLocalization.Pick(
+                    "未配置完整：需要 BaseUrl / 模型 / Key",
+                    "Incomplete config: BaseUrl / Model / API Key required",
+                    "Unvollständig: BaseUrl / Modell / Key nötig",
+                    "Configuración incompleta: falta URL / Modelo / Key",
+                    "Configuration incomplète : URL / Modèle / Clé requis",
+                    "設定不足：BaseUrl / モデル / Key が必要です",
+                    "설정 미완료: BaseUrl / 모델 / Key 필요",
+                    "Brak konfiguracji: wymagane BaseUrl / Model / Klucz",
+                    "Configuração incompleta: falta BaseUrl / Modelo / Chave",
+                    "Не заполнено: укажите BaseUrl / Модель / Ключ");
                 _testBusy = false;
                 return;
             }
 
+            string targetLang = ModLocalization.Current;
             var thread = new System.Threading.Thread(() =>
             {
                 try
                 {
                     string proto = LlmClient.ProtocolName(st.Protocol);
-                    var r = LlmClient.Ask(st, "你是连通性测试助手。", "只回复两个字：正常");
-                    if (r.Ok) TestStatus = $"成功（{proto}，{r.LatencyMs}ms）：{Trim(r.Say ?? r.Text, 40)}";
-                    else TestStatus = $"失败（{proto}）：{Trim(r.Error, 120)}";
+                    var r = targetLang == "zh"
+                        ? LlmClient.Ask(st, "你是连通性测试助手。", "只回复两个字：正常")
+                        : LlmClient.Ask(st, "You are a connectivity test assistant.", "Reply only: OK");
+                    if (r.Ok) TestStatus = string.Format(ModLocalization.Pick(
+                        "成功（{0}，{1}ms）：{2}", "OK ({0}, {1}ms): {2}", "OK ({0}, {1}ms): {2}", "OK ({0}, {1}ms): {2}",
+                        "OK ({0}, {1}ms) : {2}", "成功（{0}、{1}ms）：{2}", "성공 ({0}, {1}ms): {2}", "OK ({0}, {1}ms): {2}", "OK ({0}, {1}ms): {2}", "ОК ({0}, {1} мс): {2}"),
+                        proto, r.LatencyMs, Trim(r.Say ?? r.Text, 40));
+                    else TestStatus = string.Format(ModLocalization.Pick(
+                        "失败（{0}）：{1}", "Failed ({0}): {1}", "Fehler ({0}): {1}", "Error ({0}): {1}",
+                        "Échec ({0}) : {1}", "失敗（{0}）：{1}", "실패 ({0}): {1}", "Błąd ({0}): {1}", "Falha ({0}): {1}", "Ошибка ({0}): {1}"),
+                        proto, Trim(r.Error, 120));
                 }
                 catch (Exception e)
                 {
-                    TestStatus = "异常：" + e.Message;
+                    TestStatus = ModLocalization.Pick("异常：", "Error: ", "Fehler: ", "Error: ", "Erreur : ", "エラー：", "오류: ", "Błąd: ", "Erro: ", "Ошибка: ") + e.Message;
                 }
                 finally
                 {
@@ -1189,26 +1210,46 @@ namespace Dropoutline
         /// </summary>
         private static string LocalReply(string said)
         {
-            if (string.IsNullOrEmpty(said)) return "嗯，我在听。";
+            if (string.IsNullOrEmpty(said))
+                return ModLocalization.Pick("嗯，我在听。", "Yeah, I'm listening.", "Ja, ich höre zu.", "Sí, te escucho.",
+                    "Oui, je vous écoute.", "うん、聞いています。", "응, 듣고 있어.", "Tak, słucham.", "Sim, estou ouvindo.", "Да, я слушаю.");
             var s = said.Trim();
+            var low = s.ToLowerInvariant();
 
-            bool deny = s.Contains("不用") || s.Contains("不要") || s.Contains("算了") || s.Contains("别捡") || s.Contains("不需要");
-            bool askPick = s.Contains("捡") || s.Contains("拿") || s.Contains("搜");
-            bool askMove = s.Contains("走") || s.Contains("去") || s.Contains("回");
-            bool greet = s.Contains("在吗") || s.Contains("大肥鱼") || s.Contains("喂");
+            bool deny = s.Contains("不用") || s.Contains("不要") || s.Contains("算了") || s.Contains("别捡") || s.Contains("不需要") ||
+                low.Contains("no thanks") || low.Contains("leave it") || low.Contains("don't pick") || low.Contains("skip it");
+            bool askPick = s.Contains("捡") || s.Contains("拿") || s.Contains("搜") ||
+                low.Contains("pick") || low.Contains("loot") || low.Contains("grab") || low.Contains("take");
+            bool askMove = s.Contains("走") || s.Contains("去") || s.Contains("回") ||
+                low.Contains("move") || low.Contains("follow") || low.Contains("come") || low.Contains("go ");
+            bool greet = s.Contains("在吗") || s.Contains("大肥鱼") || s.Contains("喂") ||
+                low == "hi" || low == "hello" || low == "hey" || low.Contains("you there") || low.Contains("hey ");
 
             if (deny)
             {
                 LootWarden.DismissNearby();
-                return "行，那就不捡了。";
+                return ModLocalization.Pick("行，那就不捡了。", "Alright, leaving it.", "Alles klar, lass ich liegen.",
+                    "Vale, lo dejo.", "D'accord, on laisse.", "了解、拾わずに置きます。",
+                    "알겠어, 안 주울게.", "W porządku, zostawiam.", "Tudo bem, vou deixar.", "Ладно, оставим это.");
             }
-            if (askPick) return "我去看看能拿什么。";
-            if (askMove) return "好，跟着你走。";
-            if (greet) return "在呢，怎么了？";
+            if (askPick)
+                return ModLocalization.Pick("我去看看能拿什么。", "Let me check what can be looted.", "Ich schau mal, was wir mitnehmen können.",
+                    "Voy a ver qué se puede recoger.", "Je regarde ce qu'on peut prendre.", "拾えそうなものを確認します。",
+                    "주울 만한 게 있는지 볼게.", "Sprawdzę, co można zabrać.", "Vou ver o que dá para pegar.", "Посмотрю, что можно забрать.");
+            if (askMove)
+                return ModLocalization.Pick("好，跟着你走。", "Got it, right behind you.", "Alles klar, ich folge dir.",
+                    "Vale, te sigo.", "D'accord, je vous suis.", "了解、ついていきます。",
+                    "좋아, 따라갈게.", "Jasne, idę za tobą.", "Certo, estou te seguindo.", "Хорошо, иду за тобой.");
+            if (greet)
+                return ModLocalization.Pick("在呢，怎么了？", "Here! What's up?", "Bin da! Was gibt's?",
+                    "¡Aquí estoy! ¿Qué pasa?", "Je suis là ! Quoi de neuf ?", "ここにいますよ、どうしました？",
+                    "여기 있어, 무슨 일이야?", "Jestem! Co jest?", "Tô aqui, o que houve?", "Я здесь, что случилось?");
 
             // 兜底：重复玩家一句关键词，表示听到了
             var tail = s.Length > 12 ? s.Substring(0, 12) + "…" : s;
-            return $"「{tail}」——我记着了。";
+            return string.Format(ModLocalization.Pick(
+                "「{0}」——我记着了。", "\"{0}\" — noted.", "„{0}“ — gemerkt.", "\"{0}\" — anotado.",
+                "« {0} » — noté.", "「{0}」——覚えておきます。", "\"{0}\" — 기억해둘게.", "„{0}” — zanotowane.", "\"{0}\" — anotado.", "«{0}» — запомнил."), tail);
         }
 
         /// <summary>比较上一次的状态，产出事件键；没有事件返回 null。</summary>
@@ -1265,6 +1306,20 @@ namespace Dropoutline
 
         private static string LocalEventLine(string evt)
         {
+            if (!ModLocalization.IsZh)
+            {
+                switch (evt)
+                {
+                    case "hurt": return ModLocalization.Pick("", "Ouch, you took a hit — pull back and patch up!", "Au, Treffer kassiert — erst verarzten!", "¡Te han dado! Retrocede y cúrate.", "Aïe, vous saignez — soignez-vous à couvert.", "痛っ、怪我してますよ！安全な場所で回復しましょう。", "아야, 피가 깎였어! 뒤로 빠져서 치료하자.", "Dostałeś! Wycofaj się i opatrz rany.", "Ai, você levou um golpe! Recue e se cure.", "Осторожно, ты ранен! Отойди и перевяжись.");
+                    case "heal": return ModLocalization.Pick("", "Health looks steadier now.", "Sieht wieder stabiler aus.", "Ya estás más estable.", "Votre état s'est stabilisé.", "だいぶ落ち着きましたね。", "체력이 한결 안정됐네.", "Wygląda na to, że jest lepiej.", "Sua saúde estabilizou um pouco.", "Самочувствие выровнялось.");
+                    case "hungry": return ModLocalization.Pick("", "Getting hungry — got any rations in your bag?", "Magen knurrt — noch Rationen dabei?", "Tienes hambre, revisa si llevas comida.", "Vous avez faim — vérifiez vos vivres.", "お腹が空いてきましたね。食料はありますか？", "배고프겠는데, 가방에 먹을 거 있나 봐.", "Burczy w brzuchu — masz coś do jedzenia?", "Bateu a fome — tem comida na mochila?", "Живот урчит — перекуси чем-нибудь из рюкзака.");
+                    case "thirsty": return ModLocalization.Pick("", "Thirst is getting low — drink something soon.", "Durst steigt — trink bald etwas.", "Tienes sed, bebe algo pronto.", "Vous avez soif — pensez à boire.", "喉が渇いてますよ。水分を補給しましょう。", "목이 마른데, 물이나 음료 좀 마셔.", "Chce ci się pić — napij się czegoś.", "Está com sede — beba algo logo.", "Жажда даёт о себе знать — попей воды.");
+                    case "tired": return ModLocalization.Pick("", "Fatigue is piling up — try to get some rest.", "Müdigkeit steigt — bald ausruhen.", "El cansancio se nota, descansa cuando puedas.", "La fatigue monte — reposez-vous vite.", "かなり疲れてますね。休めそうな場所を探しましょう。", "피로가 꽤 쌓였어, 쉴 곳을 찾아보자.", "Zmęczenie rośnie — przydałby się odpoczynek.", "O cansaço está batendo — tente descansar.", "Усталость накапливается — пора передохнуть.");
+                    case "threat": return ModLocalization.Pick("", "Movement ahead — weapons ready!", "Bewegung voraus — wachsam bleiben!", "¡Movimiento al frente! ¡Alerta!", "Mouvement devant — restez prêt !", "前方に反応あり！警戒してください！", "전방에 움직임이 있어! 조심해!", "Ruch przed nami — zachowaj czujność!", "Movimento à frente — prepare-se!", "Движение впереди — будь начеку!");
+                    case "safe": return ModLocalization.Pick("", "Area's quiet again — check ammo and loot.", "Alles ruhig — Munition und Beute prüfen.", "Zona despejada; revisa munición y botín.", "Zone calme — vérifiez vos chargeurs.", "周囲が静かになりましたね。弾と物資を確認しましょう。", "주변이 조용해졌어. 탄창이랑 짐 좀 확인하자.", "Czysto — sprawdź amunicję i łupy.", "Área limpa — cheque a munição e os itens.", "Вокруг тихо — проверь патроны и добычу.");
+                    case "idle": return ModLocalization.Pick("", "Quiet around here — want me to highlight nearby loot?", "Alles ruhig — soll ich Beute markieren?", "Todo tranquilo, ¿quieres que marque algún botín?", "Zone calme — voulez-vous que je marque un objet ?", "静かですね。近くの物資を強調表示しましょうか？", "조용하네. 주변 물자 위치 표시해줄까?", "Spokojnie tu — oznaczyć pobliskie łupy?", "Tudo calmo — quer que eu marque algum item?", "Тихо вокруг — отметить ближайший лут?");
+                }
+            }
             switch (evt)
             {
                 case "hurt":
@@ -1396,6 +1451,16 @@ namespace Dropoutline
 
         private static string BuildLocalCompanionLine(float hpRatio, int threats)
         {
+            if (!ModLocalization.IsZh)
+            {
+                if (hpRatio < 0.35f)
+                    return threats > 0
+                        ? string.Format(ModLocalization.Pick("", "HP is critical with {0} threats nearby — fall back and heal!", "Kritische LP mit {0} Feinden — Rückzug!", "Salud crítica y {0} amenazas — ¡cúrate!", "PV critiques et {0} menaces — soignez-vous !", "体力ピンチ・周囲に敵{0}体！引いて回復を！", "체력 위험, 주변 위협 {0}명! 물러나서 치료해!", "Krytyczne PŻ przy {0} wrogach — wycofaj się!", "Vida crítica com {0} ameaças — recue e cure-se!", "Мало ОЗ и {0} врагов рядом — отступи и лечись!"), threats)
+                        : ModLocalization.Pick("", "Health is below 35% — patch up while it's clear.", "Unter 35% LP — jetzt verarzten.", "Salud bajo 35% — cúrate ahora.", "Santé sous 35% — profitez-en pour soigner.", "体力が35%以下です。今のうちに回復を。", "체력이 35% 미만이야. 조용할 때 치료해.", "Poniżej 35% PŻ — opatrz się teraz.", "Vida abaixo de 35% — trate-se agora.", "Здоровье ниже 35% — подлечись пока тихо.");
+                if (threats > 0)
+                    return string.Format(ModLocalization.Pick("", "{0} threats in sight — check cover and ammo.", "{0} Bedrohungen in Sicht — Deckung prüfen.", "{0} amenazas a la vista — revisa munición.", "{0} menaces en vue — vérifiez vos munitions.", "視界内に敵が{0}体います。弾数と退路を確認して。", "시야에 위협이 {0}명 보여. 엄폐랑 탄약 확인해.", "{0} zagrożeń w zasięgu — sprawdź amunicję.", "{0} ameaças à vista — cheque cobertura e munição.", "В поле зрения {0} угроз — проверь укрытие и патроны."), threats);
+                return ModLocalization.Pick("", "All steady for now. Ask anytime if you want help checking gear or spotting threats.", "Alles stabil. Sag Bescheid, wenn ich etwas markieren soll.", "Todo tranquilo. Pídeme ayuda cuando quieras.", "Tout semble calme. Demandez-moi si besoin.", "状況は安定しています。必要ならいつでも声をかけてください。", "지금은 안정적이야. 필요하면 언제든 불러.", "Sytuacja stabilna. Daj znać, jeśli w czymś pomóc.", "Tudo estável por enquanto. Avise se precisar.", "Пока всё спокойно. Скажи, если нужна помощь.");
+            }
             try
             {
                 string bat = GameFacts.BatterySummary();
@@ -1511,14 +1576,14 @@ namespace Dropoutline
         {
             switch (evt)
             {
-                case "hurt": return "玩家受伤掉血了";
-                case "heal": return "玩家血量恢复了不少";
-                case "hungry": return "玩家饿了";
-                case "thirsty": return "玩家渴了";
-                case "tired": return "玩家很疲劳";
-                case "threat": return "附近出现了敌对目标";
-                case "safe": return "附近的威胁清掉了";
-                case "idle": return "玩家很久没动";
+                case "hurt": return ModLocalization.Pick("玩家受伤掉血了", "The player took damage", "Der Spieler hat Schaden erlitten", "El jugador sufrió daño", "Le joueur a subi des dégâts", "プレイヤーがダメージを受けた", "플레이어가 피해를 입음", "Gracz odniósł obrażenia", "O jogador sofreu dano", "Игрок получил урон");
+                case "heal": return ModLocalization.Pick("玩家血量恢复了不少", "The player recovered health", "Der Spieler hat Gesundheit regeneriert", "El jugador recuperó salud", "Le joueur a récupéré de la santé", "プレイヤーのHPが回復した", "플레이어가 체력을 회복함", "Gracz odzyskał zdrowie", "O jogador recuperou vida", "Игрок восстановил здоровье");
+                case "hungry": return ModLocalization.Pick("玩家饿了", "The player is hungry", "Der Spieler ist hungrig", "El jugador tiene hambre", "Le joueur a faim", "プレイヤーが空腹状態", "플레이어가 배고픔", "Gracz jest głodny", "O jogador está com fome", "Игрок голоден");
+                case "thirsty": return ModLocalization.Pick("玩家渴了", "The player is thirsty", "Der Spieler ist durstig", "El jugador tiene sed", "Le joueur a soif", "プレイヤーが喉の渇き状態", "플레이어가 목마름", "Gracz jest spragniony", "O jogador está com sede", "Игрок хочет пить");
+                case "tired": return ModLocalization.Pick("玩家很疲劳", "The player is exhausted", "Der Spieler ist erschöpft", "El jugador está agotado", "Le joueur est épuisé", "プレイヤーが疲労状態", "플레이어가 지침", "Gracz jest wyczerpany", "O jogador está exausto", "Игрок устал");
+                case "threat": return ModLocalization.Pick("附近出现了敌对目标", "Hostiles appeared nearby", "Feinde in der Nähe gesichtet", "Aparecieron enemigos cerca", "Des ennemis sont apparus à proximité", "近くに敵対目標が出現", "주변에 적대 목표 출현", "W pobliżu pojawili się wrogowie", "Inimigos apareceram por perto", "Рядом появились враги");
+                case "safe": return ModLocalization.Pick("附近的威胁清掉了", "Nearby threats cleared", "Gefahren in der Nähe beseitigt", "Amenazas cercanas eliminadas", "Menaces proches éliminées", "周辺の脅威を排除", "주변 위협 제거 완료", "Zagrożenia w pobliżu usunięte", "Ameaças próximas eliminadas", "Угрозы поблизости устранены");
+                case "idle": return ModLocalization.Pick("玩家很久没动", "The player has been idle for a while", "Der Spieler bewegt sich schon länger nicht", "El jugador lleva un rato inactivo", "Le joueur est immobile depuis un moment", "プレイヤーがしばらく動いていない", "플레이어가 한동안 움직이지 않음", "Gracz od dłuższego czasu się nie rusza", "O jogador está parado há algum tempo", "Игрок давно не двигался");
                 default: return evt;
             }
         }
@@ -1545,7 +1610,7 @@ namespace Dropoutline
             if (r.Task != null)
             {
                 try { AiTaskRuntime.Accept(r.Task, Guid.NewGuid().ToString("N"), _companionRequestChatId); }
-                catch (Exception error) { r.Say = "任务没有执行：" + error.Message; }
+                catch (Exception error) { r.Say = ModLocalization.Pick("任务没有执行：", "Task not executed: ", "Aufgabe nicht ausgeführt: ", "Tarea no ejecutada: ", "Tâche non exécutée : ", "タスク未実行：", "작업 미실행: ", "Zadanie niewykonane: ", "Tarefa não executada: ", "Задача не выполнена: ") + error.Message; }
             }
             if (!string.IsNullOrEmpty(r.Say)) SayReport(r.Say, _companionRequestChatId);
             if (_companionRequestChatId == _pendingChatId)
@@ -1606,7 +1671,9 @@ namespace Dropoutline
                         try { shownOfficial = AiNetChat.Say(directReply); } catch { }
                     }
                     if (!shownOfficial)
-                        ChatInput.Log(IsPlayerMode() ? "玩家模式指令" : "联机指令", directReply);
+                        ChatInput.Log(IsPlayerMode()
+                            ? ModLocalization.Pick("玩家模式指令", "Coop Command", "Koop-Befehl", "Comando Koop", "Ordre coop", "協力コマンド", "협동 명령", "Rozkaz koopa", "Comando Coop", "Кооп-команда")
+                            : ModLocalization.Pick("联机指令", "Room Command", "Raumbefehl", "Comando sala", "Ordre salon", "ルーム操作", "방 명령", "Rozkaz pokoju", "Comando de sala", "Команда комнаты"), directReply);
                     AiCoopPlayer.ShowAvatarBubble(directReply, 3.5f);
                 }
             }
@@ -1929,7 +1996,7 @@ namespace Dropoutline
                     try { AiTaskRuntime.Accept(cmd.task, cmd.id, cmd.replyTo); }
                     catch (Exception error)
                     {
-                        ApplyDecision(agent, "clear", "任务没有执行：" + error.Message, "", cmd.replyTo ?? cmd.id);
+                        ApplyDecision(agent, "clear", ModLocalization.Pick("任务没有执行：", "Task not executed: ", "Aufgabe nicht ausgeführt: ", "Tarea no ejecutada: ", "Tâche non exécutée : ", "タスク未実行：", "작업 미실행: ", "Zadanie niewykonane: ", "Tarefa não executada: ", "Задача не выполнена: ") + error.Message, "", cmd.replyTo ?? cmd.id);
                         if (cmd.replyTo == _pendingChatId) { _pendingPlayerChat = null; _pendingChatId = ""; }
                         WriteStateFile(agent, _pendingPlayerChat); return;
                     }
@@ -2112,12 +2179,32 @@ namespace Dropoutline
             if (string.IsNullOrWhiteSpace(rawCmd)) return false;
             if (IsMultiplayerClientOnly())
             {
-                note = "当前为联机客户端，雇佣 NPC 指令由房主端权威执行。";
+                note = ModLocalization.Pick(
+                    "当前为联机客户端，雇佣 NPC 指令由房主端权威执行。",
+                    "Multiplayer client: hired NPC commands are executed by the host.",
+                    "Client-Modus: Söldner-Befehle führt der Host aus.",
+                    "Cliente: el anfitrión ejecuta los comandos de NPC.",
+                    "Client : l'hôte exécute les ordres des PNJ.",
+                    "マルチクライアント側のため、雇用NPCの操作はホストが行います。",
+                    "멀티 클라이언트에서는 호스트가 고용 NPC 명령을 실행합니다.",
+                    "Klient: rozkazy najemników wykonuje host.",
+                    "Cliente: o anfitrião executa comandos de NPC.",
+                    "Вы клиент: команды наёмников выполняет хост.");
                 return false;
             }
             if (agent == null || agent.npcData == null)
             {
-                note = "当前未招募雇佣 NPC（请先在游戏内招募幸存者，或改用「玩家模式」）。";
+                note = ModLocalization.Pick(
+                    "当前未招募雇佣 NPC（请先在游戏内招募幸存者，或改用「玩家模式」）。",
+                    "No hired NPC recruited yet (recruit one in-game or switch to Coop Player Mode).",
+                    "Kein NPC angeheuert (erst rekrutieren oder in Koop-Spieler wechseln).",
+                    "No hay NPC contratado (recluta uno o usa Jugador cooperativo).",
+                    "Aucun PNJ recruté (recrutez-en un ou passez en Joueur coop).",
+                    "雇用済みNPCがいません（仲間を雇うかプレイヤーモードへ）。",
+                    "고용된 NPC가 없습니다 (생존자를 고용하거나 플레이어 모드로 전환).",
+                    "Brak najętego NPC (zrekrutuj w grze lub użyj trybu Gracza).",
+                    "Nenhum NPC contratado (recrute um ou mude para Jogador Coop).",
+                    "Нет нанятого NPC (наймите в игре или выберите режим игрока).");
                 return false;
             }
             string matched = null;
@@ -2127,7 +2214,9 @@ namespace Dropoutline
             }
             if (matched == null)
             {
-                note = $"不支持的非官方 NPC 指令：{rawCmd}";
+                note = ModLocalization.Pick("不支持的非官方 NPC 指令：", "Unsupported NPC command: ", "Nicht unterstützter NPC-Befehl: ",
+                    "Comando NPC no compatible: ", "Ordre PNJ non pris en charge : ", "非対応のNPCコマンド：",
+                    "지원하지 않는 NPC 명령: ", "Nieobsługiwany rozkaz NPC: ", "Comando de NPC não suportado: ", "Неподдерживаемая команда NPC: ") + rawCmd;
                 return false;
             }
             try
@@ -2137,12 +2226,16 @@ namespace Dropoutline
                 else
                     agent.npcData.ExecuteNPCCommand(matched);
                 DropOutlinePlugin.L.LogInfo($"[雇佣NPC] 执行官方指令 → {matched}");
-                note = $"已执行雇佣NPC指令：{matched}";
+                note = ModLocalization.Pick("已执行雇佣NPC指令：", "Executed NPC command: ", "NPC-Befehl ausgeführt: ",
+                    "Comando NPC ejecutado: ", "Ordre PNJ exécuté : ", "NPCコマンド実行：",
+                    "NPC 명령 실행: ", "Wykonano rozkaz NPC: ", "Comando NPC executado: ", "Выполнена команда NPC: ") + matched;
                 return true;
             }
             catch (Exception e)
             {
-                note = $"雇佣NPC指令执行失败：{e.Message}";
+                note = ModLocalization.Pick("雇佣NPC指令执行失败：", "NPC command failed: ", "NPC-Befehl fehlgeschlagen: ",
+                    "Error en comando NPC: ", "Échec ordre PNJ : ", "NPCコマンド失敗：",
+                    "NPC 명령 실패: ", "Błąd rozkazu NPC: ", "Falha no comando NPC: ", "Ошибка команды NPC: ") + e.Message;
                 DropOutlinePlugin.L.LogWarning($"[雇佣NPC] {note}");
                 return false;
             }
@@ -2358,12 +2451,14 @@ namespace Dropoutline
             while (Memory.Count > 12) Memory.RemoveAt(0);
         }
 
-        private static string NpcName() => CfgNpcName != null && !string.IsNullOrEmpty(CfgNpcName.Value) ? CfgNpcName.Value : "阿岳";
+        private static string NpcName() => ModLocalization.LocalizedDefaultNameOrCustom(
+            CfgNpcName != null ? CfgNpcName.Value : null, "阿岳", "大肥鱼", ModLocalization.DefaultAiName());
         /// <summary>供其他模块（官方聊天接入层）读取她的显示名。</summary>
         internal static string AiDisplayName() => NpcName();
         /// <summary>供官方聊天单人发送回显使用的玩家名称。</summary>
         internal static string PlayerDisplayName() => PlayerName();
-        private static string PlayerName() => CfgPlayerName != null && !string.IsNullOrEmpty(CfgPlayerName.Value) ? CfgPlayerName.Value : "队长";
+        internal static string PlayerName() => ModLocalization.LocalizedDefaultNameOrCustom(
+            CfgPlayerName != null ? CfgPlayerName.Value : null, "队长", "", ModLocalization.DefaultPlayerTitle());
 
         // ───────────────────────── LLM ─────────────────────────
 

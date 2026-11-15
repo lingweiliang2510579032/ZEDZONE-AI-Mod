@@ -1,61 +1,36 @@
-[h1]AI伴侣（测试版v0.1） — 《隔离区》AI 伙伴代码模组[/h1]
-一款轻量、开源、支持单人与联机的 AI 生存伴侣模组！你可以把她当成随时聊天的陪伴搭档、指挥已招募的雇佣 NPC 队友，甚至为她生成独立角色卡、像真正联机玩家一样陪你并肩作战。
+[h1]AI伴侣（测试版v0.2）[/h1]
+《隔离区（ZED ZONE）》的 AI 伙伴模组（MIT 开源），完整支持[b]游戏本体全部 10 种官方语言[/b]，提供 [b]API 直连大模型[/b] 与 [b]DSH 本地智能体[/b] 两种接入方式，并可在[b]聊天陪伴 / 接管雇佣 NPC / 联机玩家[/b]三种表现形式间随时切换。
 
-[b]当前版本：测试版 v0.1[/b]（后续每次更新版本号递增 +0.1：v0.2、v0.3……）
-[b]适用于 ZED ZONE（隔离区）Windows / Unity IL2CPP 正式版[/b]
+[h2]一、安装前必看（重要）[/h2]
+[olist]
+[*][b]必须先安装前置加载器[/b]：请先订阅所需物品 [b]ZED ZONE Code Mod Loader（3834614258）[/b]，在其工坊文件夹中运行一次 [code]install.cmd[/code] 完成安装（安装过一次即可）。
+[*]订阅本模组并在主菜单的模组列表中启用，重启游戏即可生效。
+[*]支持语言：简体中文、English、Deutsch、Español、Français、日本語、한국어、Polski、Português、Русский，默认自动跟随游戏语言，也可在设置里手动切换。
+[/olist]
 
-[hr][/hr]
-[h2]⚠️ 第一步：安装必需前置（必看，否则不生效）[/h2]
-本模组为代码模组（DLL），必须配合代码加载器才能生效：
+[h2]二、怎么打开设置与聊天[/h2]
 [list]
-[*][b]必需前置[/b]：[url=https://steamcommunity.com/sharedfiles/filedetails/?id=3834614258]ZED ZONE 代码模组加载器（BepInEx IL2CPP / DLL Mods）[/url]（工坊 ID：3834614258）
-[*][b]重要激活步骤（仅首次需要）[/b]：订阅前置并等 Steam 下载完成后，打开文件夹
-[code]<你的Steam库>\steamapps\workshop\content\1211600\3834614258\[/code]
-[b]退出游戏后双击运行其中的 install.cmd[/b]，提示安装完成后再从 Steam 启动《隔离区》即可。
-[*]订阅本模组后无需手动复制 DLL；请勿同时在 [i]BepInEx/plugins[/i] 另放旧版 [i]ZEDAI.dll[/i]，避免冲突。
-[*][b]可选推荐搭配[/b]：[url=https://steamcommunity.com/sharedfiles/filedetails/?id=3838476805]Zedtool - Mod Settings[/url]（按 F7 集中管理模组参数；不装也完全可使用本模组自带的设置弹窗）。
+[*][b]打开配置界面[/b]：进入游戏按 [code]ESC[/code] → [b]游戏选项[/b] → 找到 [b]AI 伙伴[/b] → 点击 [b]打开 AI 伙伴设置[/b]，会弹出独立的 4 分页设置窗。
+[*][b]单人与联机聊天[/b]：按 [b]Enter 键[/b]打开游戏左侧官方聊天框即可直接和 AI 对话或下达请求；所有回复都会控制在合适长度内并正确换行显示在左侧聊天框。
 [/list]
 
-[hr][/hr]
-[h2]🚀 第二步：3 分钟新手上手指南（API 模式直接玩）[/h2]
-[list=1]
-[*]进入游戏后按 [b]ESC → 游戏选项[/b]，点击右侧导航栏 [b]AI 伙伴[/b]，再点击 [b]打开 AI 伙伴设置[/b]。
-[*][b]第 1 页「1. 接入与表现形式」[/b]：开启 [b]启用 AI 伙伴[/b]，接入模式保持 [b]API 模式（模组直连大模型）[/b]，表现形式新手建议保持 [b]聊天陪伴模式[/b]，开启 [b]使用游戏官方聊天框[/b]，可自定义 AI 名字、称呼与人设。
-[*][b]第 3 页「3. API 接口配置」[/b]填写你的模型接口：
-  - [b]DeepSeek 官方[/b]：协议选 Chat Completions ｜ BaseUrl 填 [code]https://api.deepseek.com/v1[/code] ｜ 模型填 [code]deepseek-chat[/code]
-  - [b]OpenAI / 兼容中转[/b]：协议选 Chat Completions ｜ BaseUrl 填 [code]https://api.openai.com/v1[/code]（或中转 /v1 地址）
-  - [b]Anthropic Claude[/b]：协议选 Anthropic Messages ｜ BaseUrl 填 [code]https://api.anthropic.com[/code]
-  - [b]本机 Ollama[/b]：协议选 Ollama 本地 ｜ BaseUrl 填 [code]http://127.0.0.1:11434[/code] ｜ Key 可留空
-  在 [b]API Key[/b] 输入框填入密钥后按 [b]回车[/b] 保存（使用本机 Windows DPAPI 加密储存，不回显），再点 [b]测试连接[/b]。
-[*][b]局内对话[/b]：进档后无论是[b]单人[/b]还是[b]联机[/b]，直接按 [b]Enter（回车）[/b] 打开游戏左侧原生官方聊天栏即可打字与她对话，干净不遮挡左下角手表 HUD。
-[/list]
+[h2]三、两种接入模式[/h2]
+[olist]
+[*][b]API 模式（多数玩家推荐）[/b]：在设置第 3 页选协议（Chat Completions / Anthropic Messages / Responses / 本地 Ollama），填写 BaseUrl、模型名与 API Key（本机 Windows 加密保存，不存明文），点「测试连接」成功即可使用。
+[*][b]DSH 模式（配合 DeepSeek Harness 使用）[/b]：在游戏设置第 1 页切换为 DSH 模式，并在 DSH 桌面端安装同版本 [code]zed-ai-dsh-plugin-v0.2.zip[/code] 插件（可从 GitHub Releases 下载），即可由本地智能体思考并保持同角色跨地图长期记忆。仅用 API 模式无需安装 DSH 插件。
+[/olist]
 
-[hr][/hr]
-[h2]🎮 三种表现形式（随时在设置第 1 页切换）[/h2]
+[h2]四、三种表现形式与单联机适配[/h2]
 [list]
-[*][b]1. 聊天陪伴模式[/b]（无需招募 NPC）：在左侧官方聊天框自然对话；血量下降、手电电量低、有未分配技能/词条点或视野有敌人时会用多样化口语主动提醒（防复读）；可在授权下安全帮你[b]整理背包网格、装填弹药、开关手电、拾取视线内掉落、按已解锁配方规划/合成、安全丢弃指定整堆、同楼层已检视容器归并[/b]。玩家操作时自动让行，绝不抢键鼠。
-[*][b]2. 接管招募（雇佣）NPC 模式[/b]：需先在游戏中招募雇佣 NPC 队友。严格按《隔离区》官方雇佣 NPC 能力运作，支持跟随、驻守、搜集资源、指定拾物、自由开火/保护/停火、武器偏好、治疗玩家、投掷手雷等（单人或联机房主控制）。
-[*][b]3. 联机玩家模式[/b]：自动创建 AI 专属 [i]MpCharacters[/i] 角色卡并以独立 [i]playerId[/i] 加入房间！支持单人开启“单机自动开启本地联机房”拉她参战，也支持房间码/IP 进房与四种协同姿态（紧跟玩家/积极迎战/原地驻守/协同拾荒）。聊天直接输入 [b]召唤[/b]、[b]过来[/b]、[b]跟我走[/b]、[b]原地待命[/b]、[b]开启联机[/b] 即可秒响应。
+[*][b]1. 聊天陪伴模式[/b]：在左侧官方聊天框自然聊天（内置防复读机制），会在掉血、饥渴、手电低电量、未加点数或遇敌时给出口语提醒。严格遵守不作弊规则：只读已解锁配方、身上物品与[b]同楼层视野内已打开检视过[/b]的箱子，绝不剧透未探索内容。所有背包整理、合成、丢弃等修改权限均[b]默认关闭[/b]，需在设置第 4 页手动授权；联机状态下只执行高亮指引、手电与只读制造规划。
+[*][b]2. 接管雇佣 NPC 模式[/b]：仅在单人或联机房主且已雇佣队友时生效，严格按游戏官方队友指令范围控制：跟随、驻守、架枪警戒、开火/停火、远近战偏好、搜刮附近资源、拾取物品、使用手雷与治疗烟雾。不越权代办建造、合成或开车。
+[*][b]3. 联机玩家模式[/b]：为 AI 生成独立联机角色卡作为正常玩家加入房间，协同战斗、搜刮与在房间聊天框发言。单人游玩时可开启「单机自动开启本地联机房」或在设置第 3 页一键开启本地房，让 AI 玩家直接进房陪玩。
 [/list]
 
-[b]🛡️ 严格反作弊原则[/b]：只依据已解锁配方、随身背包材料、同楼层镜头视野内已检视容器与视线内可见目标判断与协助，绝不透视未打开箱子、未解锁配方或视野外刷怪。所有写操作权限（丢弃/直接合成/归并容器）在第 4 页默认全部关闭。
-
-[b]💻 进阶：DSH 本地 Agent 模式[/b]
-如搭配 DeepSeek Harness（DSH）使用：模组目录内已随附 [i]zed-ai-dsh-plugin-v0.1.zip[/i]，按工坊文件夹中的 [i]README_使用说明.md[/i] 或 GitHub 说明安装至 [i]@local/zed-ai[/i] 并在设置第 1 页切为 DSH 模式即可（支持跨对话持久记忆与面板查询）。
-
-[hr][/hr]
-[h2]❓ 常见小贴士[/h2]
+[h2]五、开源地址与问题反馈[/h2]
 [list]
-[*]请务必从 [b]Steam 客户端点击开始游戏[/b]，不要直接双击 [i]ZEDZONE.exe[/i]。
-[*]若游戏选项里看不到「AI 伙伴」，多半是前置 [i]3834614258[/i] 尚未执行过 [i]install.cmd[/i]，请查看 [i]BepInEx\LogOutput.log[/i]。
-[*]单人/多人共用同一套配置，设置改动实时保存于 [i]BepInEx\config\zed.ai.cfg[/i]。
+[*][b]开源协议[/b]：MIT License
+[*][b]GitHub 开源地址（含源码、DLL 与 DSH 插件下载）[/b]：
+https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod
+[*]使用中遇到任何问题或有改进建议，欢迎在 [b]GitHub Issues[/b] 或本页面 [b]Steam 创意工坊评论区 / 讨论区[/b] 反馈！
 [/list]
-
-[hr][/hr]
-[h2]📦 开源地址与问题反馈[/h2]
-本项目采用 [b]MIT 开源协议[/b] 完全公开开源：
-[list]
-[*][b]GitHub 开源仓库[/b]：[url=https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod]https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod[/url]
-[*][b]Bug 反馈与建议[/b]：使用中遇到任何问题或有功能建议，欢迎在 [url=https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod/issues]GitHub Issues[/url] 提交，或者直接在本页面下方的 [b]Steam 创意工坊评论区[/b] 留言反馈！（若需附带 [i]BepInEx\LogOutput.log[/i]，上传前请先删除个人 API Key 等敏感信息。）
-[/list]
-[i]封面为功能示意图，实际效果以游戏内截图与分辨率为准。[/i]

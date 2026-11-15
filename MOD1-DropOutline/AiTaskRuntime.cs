@@ -32,8 +32,11 @@ namespace Dropoutline
         {
             _chatId = id ?? ""; _chatText = text ?? ""; _chatScope = Scope;
             var control = _chatText.Trim().TrimEnd('。', '！', '!', ' ');
-            string kind = control == "停止任务" || control == "取消任务" || control == "停止AI任务" || control == "停止所有任务" ? "cancel" :
-                control == "暂停任务" || control == "暂停AI任务" ? "pause" : control == "继续任务" || control == "恢复任务" ? "resume" : "";
+            var lower = control.ToLowerInvariant();
+            string kind = control == "停止任务" || control == "取消任务" || control == "停止AI任务" || control == "停止所有任务" ||
+                lower == "stop task" || lower == "cancel task" || lower == "stop all tasks" || lower == "stop ai task" ? "cancel" :
+                control == "暂停任务" || control == "暂停AI任务" || lower == "pause task" || lower == "pause ai task" ? "pause" :
+                control == "继续任务" || control == "恢复任务" || lower == "resume task" || lower == "continue task" ? "resume" : "";
             if (kind.Length > 0) { Control(kind); _usedChatId = _chatId; _usedControl = kind; }
         }
         private static void Control(string type)
@@ -69,8 +72,11 @@ namespace Dropoutline
         private static bool AllowsContinuous(string text)
         {
             text = text ?? "";
-            if (text.Contains("不要") || text.Contains("别") || text.Contains("停止") || text.Contains("取消") || text.Contains("不再") || text.Contains("不用")) return false;
-            return text.Contains("持续") || text.Contains("一直") || text.Contains("自动维护") || text.Contains("保持") || text.Contains("自动帮") || text.Contains("自动捡") || text.Contains("自动上弹");
+            string lower = text.ToLowerInvariant();
+            if (text.Contains("不要") || text.Contains("别") || text.Contains("停止") || text.Contains("取消") || text.Contains("不再") || text.Contains("不用") ||
+                lower.Contains("don't") || lower.Contains("do not") || lower.Contains("stop") || lower.Contains("cancel") || lower.Contains("no longer")) return false;
+            return text.Contains("持续") || text.Contains("一直") || text.Contains("自动维护") || text.Contains("保持") || text.Contains("自动帮") || text.Contains("自动捡") || text.Contains("自动上弹") ||
+                lower.Contains("continuous") || lower.Contains("keep ") || lower.Contains("always ") || lower.Contains("auto ");
         }
         private static bool OfflineWritesAllowed()
         {

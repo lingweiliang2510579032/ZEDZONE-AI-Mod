@@ -151,8 +151,11 @@ namespace Dropoutline
                 sb.AppendLine();
             }
             sb.AppendLine("【说话原则】");
-            sb.AppendLine("- 中文口语、末世幸存者腔调；不写小作文，不做系统汇报，不说“我是AI”，不照念工具名/JSON字段名。");
-            sb.AppendLine("- 字数控制：每次 say 只写 1~2 句简短口语（单句尽量不超过 28 字，总计不超过 75 字），用句号/叹号/问号分段，避免超长一句导致聊天栏折行截断。");
+            sb.AppendLine("- " + ModLocalization.LanguagePromptInstruction());
+            sb.AppendLine("- 保持末世幸存者伙伴口吻；不写小作文，不做系统汇报，不说“我是AI”，不照念工具名/JSON字段名。");
+            sb.AppendLine(ModLocalization.IsZh || ModLocalization.Current == "ja" || ModLocalization.Current == "ko"
+                ? "- 字数控制：每次 say 只写 1~2 句简短口语（单句尽量不超过 28 字，总计不超过 75 字），用句号/叹号/问号分段，避免超长一句导致聊天栏折行截断。"
+                : "- Length limit: keep `say` to 1-2 short colloquial sentences (under ~90 characters total), punctuated cleanly with `.` / `!` / `?` so the in-game chat box does not wrap awkwardly.");
             sb.AppendLine("- 拒绝或无法完成时，用人话说明卡在哪里或缺少什么材料/权限，不要先答应“这就做好”再把失败藏在后面。");
             sb.AppendLine();
         }
@@ -162,7 +165,8 @@ namespace Dropoutline
             sb.AppendLine("【信息与材料边界（严格反作弊）】");
             sb.AppendLine("- 只能依据已知信息与现有材料做判断和给建议：仅限已解锁的配方（craftable/craftMissing）、随身背包里实际拥有的材料、同楼层镜头视野内已检视过的容器、视线内可见地面物品与威胁。");
             sb.AppendLine("- 严禁超前剧透或作弊：绝不猜测未解锁配方、未打开检视的箱子、墙后或视野外刷怪位置。");
-            if (!string.IsNullOrEmpty(networkRole) && !networkRole.Contains("单人"))
+            if (!string.IsNullOrEmpty(networkRole) && !networkRole.Contains("单人") &&
+                !string.Equals(networkRole, ModLocalization.NetworkRoleLabel("singleplayer"), StringComparison.Ordinal))
                 sb.AppendLine("- 联机适配器说明：联机模式下直接修改背包/容器的多步任务默认收敛为只读规划、目标高亮指引、开关手电或由实体玩家/NPC 执行，不越权修改其他玩家或权威存档容器。");
             if (isCompanion)
                 sb.AppendLine("- 聊天陪伴模式下若玩家需要你在场开枪协战、搜点或跟随，可提醒玩家切换为「接管雇佣NPC模式」（需要游戏内招募队友）或「玩家模式」（创建独立 AI 角色进联机房陪玩）。");
@@ -186,7 +190,7 @@ namespace Dropoutline
                 sb.AppendLine(playerMessage);
             }
             sb.AppendLine();
-            sb.AppendLine("现在给出你的回应：只输出一个 JSON 对象，确保不要复读最近刚刚说过的句式。");
+            sb.AppendLine($"现在给出你的回应（当前游戏语言：{ModLocalization.Current}）：只输出一个 JSON 对象，确保不要复读最近刚刚说过的句式。");
             return sb.ToString();
         }
 

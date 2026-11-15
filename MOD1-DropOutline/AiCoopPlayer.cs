@@ -54,13 +54,7 @@ namespace Dropoutline
         public static bool IsNetPlayerActive => _aiNetPlayerId > 0 && IsValidController(_netPlayerCtrl);
 
         public static readonly string[] BehaviorValues = { "follow", "combat", "guard", "scavenge" };
-        public static readonly string[] BehaviorLabels =
-        {
-            "紧跟玩家（自动清怪/传送兜底）",
-            "积极迎战（主动索敌/自动换弹）",
-            "原地驻守（守卫指定位置）",
-            "协同拾荒（跟随并警戒周边）",
-        };
+        public static string[] BehaviorLabels => ModLocalization.BehaviorLabels();
 
         public static string BehaviorMode => _behaviorMode;
         public static string AvatarGuid => _avatarGuid ?? "";
@@ -257,20 +251,33 @@ namespace Dropoutline
 
                 if (nm == null || !NetworkManager.isOnline)
                 {
-                    if (NetLobby.inLobbyAsClient) return $"大厅准备中 房间码:{code}";
-                    if (NetLobby.isOpenAsHost) return $"大厅等待玩家 房间码:{code}";
+                    if (NetLobby.inLobbyAsClient)
+                        return string.Format(ModLocalization.Pick(
+                            "大厅准备中 房间码:{0}", "Lobby ready, code: {0}", "Lobby bereit, Code: {0}", "Sala lista, código: {0}",
+                            "Salon prêt, code : {0}", "ロビー待機中 コード:{0}", "로비 준비 중 코드:{0}", "Lobby gotowe, kod: {0}", "Lobby pronto, código: {0}", "Лобби готово, код: {0}"), code);
+                    if (NetLobby.isOpenAsHost)
+                        return string.Format(ModLocalization.Pick(
+                            "大厅等待玩家 房间码:{0}", "Lobby waiting, code: {0}", "Warte in Lobby, Code: {0}", "Esperando en sala, código: {0}",
+                            "Attente salon, code : {0}", "ロビー待機中（ホスト）コード:{0}", "호스트 대기 중 코드:{0}", "Lobby (host), kod: {0}", "Lobby aberto, código: {0}", "Лобби (хост), код: {0}"), code);
                     if (ncc != null && ncc.joinPhase != NetCoordClient.JoinPhase.Idle)
-                        return $"连线阶段:{ncc.joinPhase} {ncc.joinStatusLocalized ?? ncc.joinStatus}";
-                    return string.IsNullOrEmpty(_lastJoinResult) ? "单机 / 未连线" : _lastJoinResult;
+                        return string.Format(ModLocalization.Pick(
+                            "连线阶段:{0} {1}", "Connecting: {0} {1}", "Verbindung: {0} {1}", "Conectando: {0} {1}",
+                            "Connexion : {0} {1}", "接続中:{0} {1}", "연결 중:{0} {1}", "Łączenie: {0} {1}", "Conectando: {0} {1}", "Подключение: {0} {1}"),
+                            ncc.joinPhase, ncc.joinStatusLocalized ?? ncc.joinStatus);
+                    return string.IsNullOrEmpty(_lastJoinResult) ? ModLocalization.NetworkRoleLabel("offline") : _lastJoinResult;
                 }
 
-                string role = NetworkManager.isHost ? "房主" : "客户端";
+                string role = ModLocalization.NetworkRoleLabel(NetworkManager.isHost ? "host" : "client");
                 int mem = nm.members != null ? nm.members.Count : 1;
-                return $"{role} ({nm.clientState}) 成员:{mem} 房间:{(string.IsNullOrEmpty(code) ? "-" : code)}";
+                return string.Format(ModLocalization.Pick(
+                    "{0} ({1}) 成员:{2} 房间:{3}", "{0} ({1}) Members:{2} Room:{3}", "{0} ({1}) Mitgl.:{2} Raum:{3}",
+                    "{0} ({1}) Miembros:{2} Sala:{3}", "{0} ({1}) Membres:{2} Salon:{3}", "{0} ({1}) メンバー:{2} 部屋:{3}",
+                    "{0} ({1}) 인원:{2} 방:{3}", "{0} ({1}) Gracze:{2} Pokój:{3}", "{0} ({1}) Membros:{2} Sala:{3}", "{0} ({1}) Игроки:{2} Комн.:{3}"),
+                    role, nm.clientState, mem, string.IsNullOrEmpty(code) ? "-" : code);
             }
             catch
             {
-                return "联机状态未知";
+                return ModLocalization.NetworkRoleLabel("unknown");
             }
         }
 
@@ -279,20 +286,29 @@ namespace Dropoutline
             message = "";
             if (DropOutlinePlugin.WorldTearingDown)
             {
-                message = "场景切换中，请稍后再试。";
+                message = ModLocalization.Pick(
+                    "场景切换中，请稍后再试。", "Scene is loading, please try again shortly.", "Szene lädt noch, bitte kurz warten.",
+                    "Cambiando de escena, inténtalo en un momento.", "Changement de scène, réessayez.", "シーン切替中です。少しお待ちください。",
+                    "장면 전환 중입니다. 잠시 후 다시 시도하세요.", "Trwa ładowanie sceny, spróbuj za chwilę.", "Trocando de cena, aguarde.", "Сцена загружается, подождите немного.");
                 return false;
             }
             var clean = (code ?? "").Trim().ToUpperInvariant();
             if (string.IsNullOrEmpty(clean))
             {
-                message = "请先填写房间码，再执行加入房间。";
+                message = ModLocalization.Pick(
+                    "请先填写房间码，再执行加入房间。", "Enter a room code before joining.", "Bitte zuerst einen Raumcode eingeben.",
+                    "Introduce un código de sala primero.", "Saisissez un code de salon d'abord.", "先に部屋コードを入力してください。",
+                    "먼저 방 코드를 입력하세요.", "Wpisz kod pokoju przed dołączeniem.", "Informe o código da sala primeiro.", "Сначала введите код комнаты.");
                 _lastJoinResult = message;
                 return false;
             }
 
             if (Time.unscaledTime - _lastJoinAttemptAt < 1.5f)
             {
-                message = "正在发起连线，请稍候。";
+                message = ModLocalization.Pick(
+                    "正在发起连线，请稍候。", "Connection already in progress, please wait.", "Verbindung wird bereits hergestellt.",
+                    "Conexión en curso, espera un momento.", "Connexion déjà en cours, patientez.", "接続処理中です。お待ちください。",
+                    "연결 중입니다. 잠시만 기다리세요.", "Łączenie w toku, proszę czekać.", "Conexão em andamento, aguarde.", "Подключение уже выполняется, подождите.");
                 return false;
             }
             _lastJoinAttemptAt = Time.unscaledTime;
@@ -302,7 +318,10 @@ namespace Dropoutline
                 var ncc = NetCoordClient.instance;
                 if (ncc == null)
                 {
-                    message = "联机协调器未就绪（NetCoordClient.instance 为空）。";
+                    message = ModLocalization.Pick(
+                        "联机协调器未就绪（NetCoordClient.instance 为空）。", "Room coordinator is not ready yet.", "Raum-Koordinator noch nicht bereit.",
+                        "Coordinador de red no listo.", "Coordinateur réseau non prêt.", "通信コーディネーターが未初期化です。",
+                        "네트워크 코디네이터가 준비되지 않았습니다.", "Koordynator sieci nie jest gotowy.", "Coordenador de rede não está pronto.", "Координатор сети не готов.");
                     _lastJoinResult = message;
                     return false;
                 }
@@ -310,15 +329,26 @@ namespace Dropoutline
                 _lobbyProfileSent = false;
                 bool ok = ncc.JoinByCode(clean, password ?? "", false);
                 message = ok
-                    ? $"已发起房间码连线：{clean}（{ncc.joinPhase}）"
-                    : $"加入房间失败：{ncc.joinStatusLocalized ?? ncc.joinStatus ?? "协调服务拒绝或格式无效"}";
+                    ? string.Format(ModLocalization.Pick(
+                        "已发起房间码连线：{0}（{1}）", "Connecting with code: {0} ({1})", "Verbinde mit Code: {0} ({1})",
+                        "Conectando con código: {0} ({1})", "Connexion via code : {0} ({1})", "コード {0} で接続中（{1}）",
+                        "코드 {0} 연결 중 ({1})", "Łączenie kodem: {0} ({1})", "Conectando ao código: {0} ({1})", "Подключение по коду: {0} ({1})"), clean, ncc.joinPhase)
+                    : string.Format(ModLocalization.Pick(
+                        "加入房间失败：{0}", "Failed to join room: {0}", "Beitritt fehlgeschlagen: {0}",
+                        "Error al unirse: {0}", "Échec de connexion : {0}", "参加失敗：{0}",
+                        "방 참가 실패: {0}", "Nie udało się dołączyć: {0}", "Falha ao entrar: {0}", "Ошибка входа: {0}"),
+                        ncc.joinStatusLocalized ?? ncc.joinStatus ?? ModLocalization.Pick(
+                            "协调服务拒绝或格式无效", "Rejected or invalid format", "Abgelehnt oder ungültiges Format",
+                            "Rechazado o formato inválido", "Refusé ou format invalide", "拒否または形式が無効です",
+                            "거절됨 또는 잘못된 형식", "Odrzucono lub zły format", "Recusado ou formato inválido", "Отклонено или неверный формат"));
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogInfo($"[AI联机] JoinByCode({clean}) -> {ok} / {message}");
                 return ok;
             }
             catch (Exception e)
             {
-                message = "加入房间异常：" + e.Message;
+                message = ModLocalization.Pick("加入房间异常：", "Join error: ", "Beitrittsfehler: ", "Error al entrar: ", "Erreur salon : ",
+                    "参加エラー：", "방 참가 오류: ", "Błąd dołączania: ", "Erro ao entrar: ", "Ошибка входа: ") + e.Message;
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogWarning($"[AI联机] JoinByCode 异常: {e.Message}");
                 return false;
@@ -330,13 +360,19 @@ namespace Dropoutline
             message = "";
             if (DropOutlinePlugin.WorldTearingDown)
             {
-                message = "场景切换中，请稍后再试。";
+                message = ModLocalization.Pick(
+                    "场景切换中，请稍后再试。", "Scene is loading, please try again shortly.", "Szene lädt noch, bitte kurz warten.",
+                    "Cambiando de escena, inténtalo en un momento.", "Changement de scène, réessayez.", "シーン切替中です。少しお待ちください。",
+                    "장면 전환 중입니다. 잠시 후 다시 시도하세요.", "Trwa ładowanie sceny, spróbuj za chwilę.", "Trocando de cena, aguarde.", "Сцена загружается, подождите немного.");
                 return false;
             }
             var raw = (hostAndPort ?? "").Trim();
             if (string.IsNullOrEmpty(raw))
             {
-                message = "请提供 IP 或 IP:端口。";
+                message = ModLocalization.Pick(
+                    "请提供 IP 或 IP:端口。", "Enter an IP or IP:port.", "Bitte IP oder IP:Port angeben.", "Introduce IP o IP:puerto.",
+                    "Indiquez une IP ou IP:port.", "IP または IP:ポートを入力してください。", "IP 또는 IP:포트를 입력하세요.",
+                    "Podaj IP lub IP:port.", "Informe o IP ou IP:porta.", "Укажите IP или IP:порт.");
                 _lastJoinResult = message;
                 return false;
             }
@@ -358,20 +394,32 @@ namespace Dropoutline
                 var nm = NetworkManager.instance;
                 if (nm == null)
                 {
-                    message = "NetworkManager 未就绪。";
+                    message = ModLocalization.Pick(
+                        "NetworkManager 未就绪。", "NetworkManager is not ready.", "NetworkManager nicht bereit.", "NetworkManager no está listo.",
+                        "NetworkManager non prêt.", "NetworkManager が未準備です。", "NetworkManager가 준비되지 않았습니다.",
+                        "NetworkManager nie jest gotowy.", "NetworkManager não está pronto.", "NetworkManager не готов.");
                     _lastJoinResult = message;
                     return false;
                 }
                 _lobbyProfileSent = false;
                 bool ok = nm.StartClient(host, port);
-                message = ok ? $"正在直连服务器 {host}:{port}" : $"直连 {host}:{port} 失败";
+                message = ok
+                    ? string.Format(ModLocalization.Pick(
+                        "正在直连服务器 {0}:{1}", "Connecting to {0}:{1}...", "Verbinde mit {0}:{1}...",
+                        "Conectando a {0}:{1}...", "Connexion à {0}:{1}...", "{0}:{1} に接続中...",
+                        "{0}:{1}에 연결 중...", "Łączenie z {0}:{1}...", "Conectando a {0}:{1}...", "Подключение к {0}:{1}..."), host, port)
+                    : string.Format(ModLocalization.Pick(
+                        "直连 {0}:{1} 失败", "Direct connect to {0}:{1} failed", "Direktverbindung zu {0}:{1} fehlgeschlagen",
+                        "Falló conexión directa a {0}:{1}", "Échec connexion à {0}:{1}", "{0}:{1} への接続に失敗しました",
+                        "{0}:{1} 직접 연결 실패", "Nie udało się połączyć z {0}:{1}", "Falha ao conectar a {0}:{1}", "Не удалось подключиться к {0}:{1}"), host, port);
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogInfo($"[AI联机] StartClient({host}:{port}) -> {ok}");
                 return ok;
             }
             catch (Exception e)
             {
-                message = "直连异常：" + e.Message;
+                message = ModLocalization.Pick("直连异常：", "Direct connect error: ", "Verbindungsfehler: ", "Error de conexión: ",
+                    "Erreur de connexion : ", "直接接続エラー：", "연결 오류: ", "Błąd połączenia: ", "Erro de conexão: ", "Ошибка подключения: ") + e.Message;
                 _lastJoinResult = message;
                 return false;
             }
@@ -382,7 +430,10 @@ namespace Dropoutline
             message = "";
             if (DropOutlinePlugin.WorldTearingDown)
             {
-                message = "场景切换中，请稍后再试。";
+                message = ModLocalization.Pick(
+                    "场景切换中，请稍后再试。", "Scene is loading, please try again shortly.", "Szene lädt noch, bitte kurz warten.",
+                    "Cambiando de escena, inténtalo en un momento.", "Changement de scène, réessayez.", "シーン切替中です。少しお待ちください。",
+                    "장면 전환 중입니다. 잠시 후 다시 시도하세요.", "Trwa ładowanie sceny, spróbuj za chwilę.", "Trocando de cena, aguarde.", "Сцена загружается, подождите немного.");
                 return false;
             }
             if (port <= 0 || port > 65535) port = 7777;
@@ -392,7 +443,11 @@ namespace Dropoutline
                 var nm = NetworkManager.instance;
                 if (nm == null)
                 {
-                    message = "NetworkManager 未就绪，无法开房。";
+                    message = ModLocalization.Pick(
+                        "NetworkManager 未就绪，无法开房。", "NetworkManager not ready to host.", "NetworkManager für Hosting nicht bereit.",
+                        "NetworkManager no listo para alojar.", "NetworkManager non prêt à héberger.", "NetworkManager 未準備のため作成できません。",
+                        "NetworkManager가 준비되지 않아 방을 열 수 없습니다.", "NetworkManager nie jest gotowy do hostowania.",
+                        "NetworkManager não está pronto para hospedar.", "NetworkManager не готов к созданию комнаты.");
                     _lastJoinResult = message;
                     return false;
                 }
@@ -405,8 +460,14 @@ namespace Dropoutline
                     }
                     string existingCode = NetLobby.roomCode ?? NetCoordClient.instance?.roomCode ?? NetCoordClient.instance?.LocalRoomCode ?? "";
                     message = string.IsNullOrEmpty(existingCode)
-                        ? $"当前已是房主（端口 {nm.hostPort}）。"
-                        : $"当前已开启联机房间，房间码：{existingCode}";
+                        ? string.Format(ModLocalization.Pick(
+                            "当前已是房主（端口 {0}）。", "Already hosting (port {0}).", "Bereits Host (Port {0}).",
+                            "Ya eres anfitrión (puerto {0}).", "Déjà hôte (port {0}).", "すでにホスト中です（ポート {0}）。",
+                            "이미 호스트입니다 (포트 {0}).", "Już hostujesz (port {0}).", "Já é anfitrião (porta {0}).", "Вы уже хост (порт {0})."), nm.hostPort)
+                        : string.Format(ModLocalization.Pick(
+                            "当前已开启联机房间，房间码：{0}", "Room already open, code: {0}", "Raum bereits offen, Code: {0}",
+                            "Sala ya abierta, código: {0}", "Salon déjà ouvert, code : {0}", "部屋はすでに開放中・コード：{0}",
+                            "방이 이미 열려 있습니다. 코드: {0}", "Pokój już otwarty, kod: {0}", "Sala já aberta, código: {0}", "Комната уже открыта, код: {0}"), existingCode);
                     _lastJoinResult = message;
                     return true;
                 }
@@ -422,8 +483,23 @@ namespace Dropoutline
                     }
                     string code = NetCoordClient.instance?.roomCode ?? NetCoordClient.instance?.LocalRoomCode ?? NetLobby.roomCode ?? "";
                     message = started
-                        ? (string.IsNullOrEmpty(code) ? $"已开启联机房主模式（端口 {port}），等待分配房间码" : $"已开启联机房间，房间码：{code}")
-                        : "开启房主模式失败（请确认端口未被占用）";
+                        ? (string.IsNullOrEmpty(code)
+                            ? string.Format(ModLocalization.Pick(
+                                "已开启联机房主模式（端口 {0}），等待分配房间码", "Host started (port {0}), waiting for room code",
+                                "Host gestartet (Port {0}), warte auf Code", "Anfitrión iniciado (puerto {0}), esperando código",
+                                "Hôte démarré (port {0}), code en attente", "ホスト開始（ポート {0}）、コード取得待ち",
+                                "호스트 시작 (포트 {0}), 방 코드 대기 중", "Host uruchomiony (port {0}), czekanie na kod",
+                                "Hospedagem iniciada (porta {0}), aguardando código", "Хост запущен (порт {0}), ждём код"), port)
+                            : string.Format(ModLocalization.Pick(
+                                "已开启联机房间，房间码：{0}", "Coop room open, code: {0}", "Koop-Raum offen, Code: {0}",
+                                "Sala abierta, código: {0}", "Salon ouvert, code : {0}", "部屋を開放しました・コード：{0}",
+                                "협동 방이 열렸습니다. 코드: {0}", "Pokój otwarty, kod: {0}", "Sala aberta, código: {0}", "Комната открыта, код: {0}"), code))
+                        : ModLocalization.Pick(
+                            "开启房主模式失败（请确认端口未被占用）", "Failed to start host (check port availability)",
+                            "Host-Start fehlgeschlagen (Port prüfen)", "No se pudo iniciar anfitrión (revisa el puerto)",
+                            "Échec démarrage hôte (vérifiez le port)", "ホスト起動失敗（ポート使用状況を確認）",
+                            "호스트 시작 실패 (포트 사용 여부 확인)", "Nie udało się uruchomić hosta (sprawdź port)",
+                            "Falha ao hospedar (verifique a porta)", "Не удалось запустить хост (проверьте порт)");
                     _lastJoinResult = message;
                     DropOutlinePlugin.L.LogInfo($"[AI联机] In-world StartHost({port}) -> {started}, code={code}");
                     return started;
@@ -438,15 +514,22 @@ namespace Dropoutline
                 }
                 string lobbyCode = NetLobby.roomCode ?? NetCoordClient.instance?.roomCode ?? "";
                 message = opened
-                    ? $"已在大厅创建联机房间{(string.IsNullOrEmpty(lobbyCode) ? "" : " 房间码:" + lobbyCode)}"
-                    : "大厅开房失败";
+                    ? string.Format(ModLocalization.Pick(
+                        "已在大厅创建联机房间{0}", "Lobby room created{0}", "Lobby-Raum erstellt{0}", "Sala creada en lobby{0}",
+                        "Salon créé dans le lobby{0}", "ロビーで部屋を作成しました{0}", "로비 방 생성 완료{0}", "Utworzono pokój w lobby{0}",
+                        "Sala criada no lobby{0}", "Комната в лобби создана{0}"),
+                        string.IsNullOrEmpty(lobbyCode) ? "" : " " + ModLocalization.Pick("房间码:", "Code:", "Code:", "Código:", "Code:", "コード:", "코드:", "Kod:", "Código:", "Код:") + lobbyCode)
+                    : ModLocalization.Pick(
+                        "大厅开房失败", "Failed to create lobby room", "Lobby-Erstellung fehlgeschlagen", "Error al crear sala",
+                        "Échec création salon", "ロビー作成失敗", "로비 방 생성 실패", "Nie udało się utworzyć pokoju", "Falha ao criar sala", "Ошибка создания лобби");
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogInfo($"[AI联机] Lobby HostOpen -> {opened}, code={lobbyCode}");
                 return opened;
             }
             catch (Exception e)
             {
-                message = "开房异常：" + e.Message;
+                message = ModLocalization.Pick("开房异常：", "Host error: ", "Host-Fehler: ", "Error al alojar: ", "Erreur d'hébergement : ",
+                    "ホスト作成エラー：", "호스트 오류: ", "Błąd hostowania: ", "Erro ao hospedar: ", "Ошибка создания комнаты: ") + e.Message;
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogWarning($"[AI联机] TryOpenHostRoom 异常: {e.Message}");
                 return false;
@@ -461,19 +544,23 @@ namespace Dropoutline
                 var nm = NetworkManager.instance;
                 if (nm == null)
                 {
-                    message = "联机模块未启动。";
+                    message = ModLocalization.Pick("联机模块未启动。", "Coop module not running.", "Koop-Modul inaktiv.",
+                        "Módulo multijugador inactivo.", "Module réseau inactif.", "通信モジュール未起動。",
+                        "멀티 모듈이 실행 중이 아닙니다.", "Moduł sieciowy nieaktywny.", "Módulo coop inativo.", "Сетевой модуль не запущен.");
                     return false;
                 }
                 nm.Shutdown();
                 _lobbyProfileSent = false;
-                message = "已退出当前联机房间。";
+                message = ModLocalization.Pick("已退出当前联机房间。", "Left the coop room.", "Koop-Raum verlassen.",
+                    "Saliste de la sala.", "Salon quitté.", "部屋から退出しました。", "협동 방에서 나갔습니다.", "Opuszczono pokój.", "Saiu da sala.", "Вы вышли из комнаты.");
                 _lastJoinResult = message;
                 DropOutlinePlugin.L.LogInfo("[AI联机] Shutdown()");
                 return true;
             }
             catch (Exception e)
             {
-                message = "退出房间失败：" + e.Message;
+                message = ModLocalization.Pick("退出房间失败：", "Failed to leave room: ", "Verlassen fehlgeschlagen: ",
+                    "Error al salir: ", "Échec sortie : ", "退出失敗：", "방 나가기 실패: ", "Błąd opuszczania: ", "Falha ao sair: ", "Ошибка выхода: ") + e.Message;
                 _lastJoinResult = message;
                 return false;
             }
@@ -508,7 +595,9 @@ namespace Dropoutline
                 NetLobby.SetLocalProfile(nm.localPlayerId, chr);
                 lobby.SendLocalClientProfile();
                 _lobbyProfileSent = true;
-                _lastJoinResult = $"大厅角色已就绪：{chr.characterName}";
+                _lastJoinResult = string.Format(ModLocalization.Pick(
+                    "大厅角色已就绪：{0}", "Lobby character ready: {0}", "Lobby-Charakter bereit: {0}", "Personaje listo: {0}",
+                    "Personnage prêt : {0}", "ロビーキャラ準備完了：{0}", "로비 캐릭터 준비 완료: {0}", "Postać gotowa: {0}", "Personagem pronto: {0}", "Персонаж в лобби готов: {0}"), chr.characterName);
                 DropOutlinePlugin.L.LogInfo($"[AI联机] 客户端大厅自动提交角色卡: {chr.characterName} (id={nm.localPlayerId})");
             }
             catch (Exception e)
@@ -536,7 +625,7 @@ namespace Dropoutline
         /// <summary>在官方联机角色目录（MpCharacters）加载或创建 AI 专属玩家角色卡。</summary>
         private static CharacterData EnsureAiMpCharacterProfile(string aiName, int preferredCamp = 0)
         {
-            string cleanName = string.IsNullOrWhiteSpace(aiName) ? "大肥鱼" : aiName.Trim();
+            string cleanName = string.IsNullOrWhiteSpace(aiName) ? ModLocalization.DefaultAiName() : aiName.Trim();
             string profileId = SanitizeProfileId(cleanName);
             _aiMpProfileId = profileId;
 
@@ -695,13 +784,22 @@ namespace Dropoutline
             message = "";
             if (DropOutlinePlugin.WorldTearingDown)
             {
-                message = "场景切换中，暂无法生成 AI 玩家。";
+                message = ModLocalization.Pick("场景切换中，暂无法生成 AI 玩家。", "Scene is loading, cannot spawn AI player yet.",
+                    "Szene lädt noch, KI-Spieler noch nicht möglich.", "Cambiando de escena, aún no se puede crear el jugador IA.",
+                    "Changement de scène, impossible de générer le joueur IA.", "シーン切替中のため AI プレイヤーを生成できません。",
+                    "장면 전환 중이므로 AI 플레이어를 소환할 수 없습니다.", "Ładowanie sceny, nie można teraz przyzwać gracza AI.",
+                    "Trocando de cena, ainda não é possível gerar o jogador IA.", "Сцена загружается, ИИ-игрок пока недоступен.");
                 return false;
             }
 
             if (IsNetPlayerActive)
             {
-                message = $"AI 玩家 {AiCompanion.GetNpcName()} 已在房间中（playerId={_aiNetPlayerId}）。";
+                message = string.Format(ModLocalization.Pick(
+                    "AI 玩家 {0} 已在房间中（playerId={1}）。", "AI player {0} is already in the room (playerId={1}).",
+                    "KI-Spieler {0} ist bereits im Raum (ID={1}).", "El jugador IA {0} ya está en la sala (ID={1}).",
+                    "Le joueur IA {0} est déjà dans le salon (ID={1}).", "AI プレイヤー {0} はすでに部屋にいます（ID={1}）。",
+                    "AI 플레이어 {0}은(는) 이미 방에 있습니다 (ID={1}).", "Gracz AI {0} jest już w pokoju (ID={1}).",
+                    "O jogador IA {0} já está na sala (ID={1}).", "ИИ-игрок {0} уже в комнате (ID={1})."), AiCompanion.GetNpcName(), _aiNetPlayerId);
                 return true;
             }
 
@@ -709,7 +807,10 @@ namespace Dropoutline
             if (existing != null && !AiCompanion.IsPlayerMode())
             {
                 SyncAvatarSquadRegistration(existing, GameController.instance?.playerCharacter);
-                message = $"实体化身 {AiCompanion.GetNpcName()} 已在队伍中。";
+                message = string.Format(ModLocalization.Pick(
+                    "实体化身 {0} 已在队伍中。", "AI companion {0} is already in the squad.", "KI-Begleiter {0} ist bereits im Trupp.",
+                    "El compañero {0} ya está en el escuadrón.", "Le compagnon {0} est déjà dans l'escouade.", "仲間化身 {0} はすでに隊列にいます。",
+                    "AI 동료 {0}은(는) 이미 분대에 있습니다.", "Towarzysz {0} jest już w drużynie.", "O companheiro {0} já está no grupo.", "Напарник {0} уже в отряде."), AiCompanion.GetNpcName());
                 return true;
             }
 
@@ -717,7 +818,17 @@ namespace Dropoutline
             {
                 if (NetworkManager.instance != null && NetworkManager.isOnline && NetworkManager.isClient && !NetworkManager.isHost)
                 {
-                    message = "当前是联机客户端，请由房主生成远端 AI 玩家，或开启「客户端自动跟房主」。";
+                    message = ModLocalization.Pick(
+                        "当前是联机客户端，请由房主生成远端 AI 玩家，或开启「客户端自动跟房主」。",
+                        "You are a multiplayer client; ask the host to spawn the AI player or enable local client follow.",
+                        "Als Client bitte den Host den KI-Spieler spawnen lassen oder lokale Client-Begleitung aktivieren.",
+                        "Eres cliente multijugador; pide al anfitrión generar al jugador IA o activa el seguimiento local.",
+                        "Vous êtes client ; demandez à l'hôte de créer le joueur IA ou activez le suivi local.",
+                        "マルチクライアント側です。ホストに生成してもらうかクライアント追従を有効にしてください。",
+                        "클라이언트 상태입니다. 호스트에게 소환을 요청하거나 클라이언트 자율을 켜세요.",
+                        "Jesteś klientem; poproś hosta o przyzwanie gracza AI lub włącz tryb lokalny.",
+                        "Você é cliente; peça ao anfitrião para gerar o jogador IA ou ative o modo local.",
+                        "Вы клиент; попросите хоста создать ИИ-игрока или включите локальное следование.");
                     return false;
                 }
             }
@@ -725,7 +836,9 @@ namespace Dropoutline
 
             if (!forceSpawn && !AiCompanion.CoopAutoAvatarEnabled)
             {
-                message = "自动生成 AI 玩家已关闭。";
+                message = ModLocalization.Pick("自动生成 AI 玩家已关闭。", "Auto-spawn AI player is disabled.", "Automatisches Spawnen deaktiviert.",
+                    "Generación automática desactivada.", "Apparition auto désactivée.", "AI プレイヤー自動生成はオフです。",
+                    "AI 플레이어 자동 소환이 꺼져 있습니다.", "Automatyczne przyzywanie AI jest wyłączone.", "Geração automática desativada.", "Автоспавн ИИ-игрока выключен.");
                 return false;
             }
 
@@ -738,7 +851,11 @@ namespace Dropoutline
             var player = gc != null ? gc.playerCharacter : null;
             if (gc == null || player == null || player.characterData == null)
             {
-                message = "尚未进入可操控存档，无法生成 AI 玩家。";
+                message = ModLocalization.Pick("尚未进入可操控存档，无法生成 AI 玩家。", "Enter a playable save before spawning an AI player.",
+                    "Erst ins Spiel laden, um den KI-Spieler zu spawnen.", "Entra en una partida antes de crear al jugador IA.",
+                    "Chargez une partie avant d'invoquer le joueur IA.", "操作可能なセーブに入ってから生成してください。",
+                    "플레이 가능한 세이브에 진입한 후 소환할 수 있습니다.", "Wejdź do gry przed przyzwaniem gracza AI.",
+                    "Entre em um save jogável antes de gerar o jogador IA.", "Сначала загрузите сохранение, чтобы призвать ИИ-игрока.");
                 return false;
             }
 
@@ -764,7 +881,12 @@ namespace Dropoutline
                 if (existing != null)
                 {
                     SyncAvatarSquadRegistration(existing, player);
-                    message = $"AI 伙伴 {AiCompanion.GetNpcName()} 已在本地小队中（未开联机房）。";
+                    message = string.Format(ModLocalization.Pick(
+                        "AI 伙伴 {0} 已在本地小队中（未开联机房）。", "AI companion {0} is in the local squad (offline).",
+                        "KI-Begleiter {0} ist im lokalen Trupp (offline).", "El compañero {0} está en el escuadrón local.",
+                        "Le compagnon {0} est dans l'escouade locale.", "仲間 {0} はローカル小隊にいます。",
+                        "AI 동료 {0}은(는) 로컬 분대에 있습니다.", "Towarzysz {0} jest w lokalnej drużynie.",
+                        "O companheiro {0} está no grupo local.", "Напарник {0} уже в локальном отряде."), AiCompanion.GetNpcName());
                     return true;
                 }
             }
@@ -772,7 +894,10 @@ namespace Dropoutline
             if (existing != null)
             {
                 SyncAvatarSquadRegistration(existing, player);
-                message = $"AI 化身 {AiCompanion.GetNpcName()} 已在队伍中。";
+                message = string.Format(ModLocalization.Pick(
+                    "AI 化身 {0} 已在队伍中。", "AI avatar {0} is already in the squad.", "KI-Avatar {0} ist bereits im Trupp.",
+                    "El avatar {0} ya está en el escuadrón.", "L'avatar {0} est déjà dans l'escouade.", "AI 分身 {0} はすでに隊列にいます。",
+                    "AI 분신 {0}은(는) 이미 분대에 있습니다.", "Awatar {0} jest już w drużynie.", "O avatar {0} já está no grupo.", "Аватар {0} уже в отряде."), AiCompanion.GetNpcName());
                 return true;
             }
 
@@ -780,7 +905,9 @@ namespace Dropoutline
             var mgr = GOAPNPCManager.instance;
             if (igc == null || mgr == null)
             {
-                message = "游戏 NPC 管理器尚未就绪，无法生成实体。";
+                message = ModLocalization.Pick("游戏 NPC 管理器尚未就绪，无法生成实体。", "NPC manager is not ready yet.",
+                    "NPC-Manager noch nicht bereit.", "Gestor de NPC no listo.", "Gestionnaire PNJ non prêt.", "NPC マネージャー未準備です。",
+                    "NPC 관리자가 준비되지 않았습니다.", "Menedżer NPC nie jest gotowy.", "Gerenciador de NPC não está pronto.", "Менеджер NPC не готов.");
                 return false;
             }
 
@@ -801,14 +928,18 @@ namespace Dropoutline
 
                 if (human == null)
                 {
-                    message = "游戏生成实体实例失败。";
+                    message = ModLocalization.Pick("游戏生成实体实例失败。", "Failed to spawn entity instance.", "Spawn der Instanz fehlgeschlagen.",
+                        "No se pudo crear la entidad.", "Échec création entité.", "エンティティ生成に失敗しました。",
+                        "엔티티 인스턴스 생성 실패.", "Nie udało się utworzyć postaci.", "Falha ao gerar instância.", "Не удалось создать сущность.");
                     return false;
                 }
 
                 var ag = human.GetComponent<GOAPAgent>();
                 if (ag == null || ag.npcData == null)
                 {
-                    message = "生成的实体缺少 GOAPAgent/npcData 组件。";
+                    message = ModLocalization.Pick("生成的实体缺少 GOAPAgent/npcData 组件。", "Spawned character lacks AI/NPC components.",
+                        "Gespawneter Figur fehlen NPC-Daten.", "Faltan componentes NPC en la entidad.", "Composants PNJ manquants.", "NPC コンポーネントが不足しています。",
+                        "생성된 캐릭터에 NPC 구성이 없습니다.", "Brak komponentów NPC.", "Componentes de NPC ausentes.", "У сущности отсутствуют компоненты NPC.");
                     return false;
                 }
 
@@ -843,14 +974,21 @@ namespace Dropoutline
                 _avatarAgent = ag;
                 _avatarGuid = npcData.npcGUID;
                 _lastCoopStatus = "spawned";
-                message = $"已召唤 {wantName}（单机本地实体）并加入小队！";
-                ShowAvatarBubble($"{player.characterData.characterName}，{wantName}来陪你玩啦！", 4.5f);
+                message = string.Format(ModLocalization.Pick(
+                    "已召唤 {0}（单机本地实体）并加入小队！", "Summoned {0} into your local squad!", "{0} zum lokalen Trupp gerufen!",
+                    "¡{0} se unió a tu escuadrón local!", "{0} a rejoint votre escouade locale !", "{0} を小隊に呼び出しました！",
+                    "{0}을(를) 로컬 분대로 소환했습니다!", "Przyzwano {0} do lokalnej drużyny!", "{0} entrou no grupo local!", "{0} призван в локальный отряд!"), wantName);
+                ShowAvatarBubble(string.Format(ModLocalization.Pick(
+                    "{0}，{1}来陪你玩啦！", "{0}, {1} is here to join you!", "{0}, {1} ist jetzt dabei!",
+                    "¡{0}, {1} está aquí contigo!", "{0}, {1} arrive à vos côtés !", "{0}、{1}が合流したよ！",
+                    "{0}, {1} 합류했어!", "{0}, {1} melduje się na miejscu!", "{0}, {1} chegou para jogar!", "{0}, {1} уже здесь с тобой!"), player.characterData.characterName, wantName), 4.5f);
                 DropOutlinePlugin.L.LogInfo($"[AI陪玩] 召唤本地实体成功 name={wantName} guid={_avatarGuid}");
                 return true;
             }
             catch (Exception e)
             {
-                message = "召唤 AI 实体失败：" + e.Message;
+                message = ModLocalization.Pick("召唤 AI 实体失败：", "Failed to summon AI: ", "Fehler beim Rufen: ", "Error al invocar IA: ",
+                    "Échec invocation IA : ", "AI 呼び出し失敗：", "AI 소환 실패: ", "Błąd przyzywania AI: ", "Falha ao invocar IA: ", "Ошибка призыва ИИ: ") + e.Message;
                 DropOutlinePlugin.L.LogWarning($"[AI陪玩] EnsureOrFindAvatarNpc 异常: {e.Message}");
                 return false;
             }
@@ -866,7 +1004,9 @@ namespace Dropoutline
                 var nps = NetPlayerSync.instance;
                 if (nm == null || nps == null || !NetworkManager.isHost)
                 {
-                    message = "联机房主模块未就绪。";
+                    message = ModLocalization.Pick("联机房主模块未就绪。", "Coop host sync is not ready.", "Host-Sync noch nicht bereit.",
+                        "Sincronización de anfitrión no lista.", "Synchro hôte non prête.", "ホスト同期が未準備です。",
+                        "호스트 동기화 모듈이 준비되지 않았습니다.", "Synchronizacja hosta niegotowa.", "Sincronização do host não pronta.", "Модуль хоста не готов.");
                     return false;
                 }
 
@@ -876,7 +1016,9 @@ namespace Dropoutline
                 var charData = EnsureAiMpCharacterProfile(wantName, camp);
                 if (charData == null)
                 {
-                    message = "初始化 AI 联机角色卡失败。";
+                    message = ModLocalization.Pick("初始化 AI 联机角色卡失败。", "Failed to create AI character profile.", "KI-Profil konnte nicht erstellt werden.",
+                        "Error al crear perfil IA.", "Échec création profil IA.", "AI キャラデータ初期化失敗。",
+                        "AI 캐릭터 프로필 생성 실패.", "Nie udało się utworzyć profilu AI.", "Falha ao criar perfil IA.", "Ошибка создания профиля ИИ.");
                     return false;
                 }
                 charData.zLevel = hostPlayer.characterData != null ? hostPlayer.characterData.zLevel : (sbyte)0;
@@ -909,7 +1051,9 @@ namespace Dropoutline
                 nps.SpawnRemotePlayer(pid, wantName, charData, spawnPos);
                 if (!nps.TryGetRemoteController(pid, out var remoteCtrl) || remoteCtrl == null)
                 {
-                    message = "NetPlayerSync 生成联机玩家失败。";
+                    message = ModLocalization.Pick("NetPlayerSync 生成联机玩家失败。", "Failed to spawn network AI player.", "Netzwerk-KI-Spieler konnte nicht gespawnt werden.",
+                        "No se pudo crear el jugador en red.", "Échec création joueur réseau.", "通信プレイヤーの生成に失敗しました。",
+                        "멀티플레이어 AI 스폰 실패.", "Nie udało się utworzyć gracza sieciowego.", "Falha ao gerar jogador em rede.", "Не удалось создать сетевого ИИ-игрока.");
                     return false;
                 }
 
@@ -934,14 +1078,30 @@ namespace Dropoutline
                 PushNetPlayerSnapshot(remoteCtrl, Vector2.zero, _netLook, false);
                 SyncNetPlayerToPeers(forceAll: true);
 
-                message = $"已创建 AI 联机角色「{wantName}」(玩家ID:{pid}) 并以正常联机玩家身份加入房间！";
-                ShowAvatarBubble($"{hostPlayer.characterData?.characterName ?? "队长"}，{wantName}已上线进房！", 4.5f);
+                message = string.Format(ModLocalization.Pick(
+                    "已创建 AI 联机角色「{0}」(玩家ID:{1}) 并以正常联机玩家身份加入房间！",
+                    "Created coop AI player \"{0}\" (ID:{1}) and joined the room!",
+                    "KI-Koop-Spieler „{0}“ (ID:{1}) erstellt und beigetreten!",
+                    "¡Jugador IA \"{0}\" (ID:{1}) creado y unido a la sala!",
+                    "Joueur IA « {0} » (ID:{1}) créé et connecté au salon !",
+                    "協力 AI「{0}」(ID:{1}) が部屋に参加しました！",
+                    "협동 AI \"{0}\" (ID:{1})이(가) 방에 참가했습니다!",
+                    "Gracz AI „{0}” (ID:{1}) dołączył do pokoju!",
+                    "Jogador IA \"{0}\" (ID:{1}) criado e entrou na sala!",
+                    "ИИ-игрок «{0}» (ID:{1}) создан и вошёл в комнату!"), wantName, pid);
+                ShowAvatarBubble(string.Format(ModLocalization.Pick(
+                    "{0}，{1}已上线进房！", "{0}, {1} has joined the room!", "{0}, {1} ist im Raum!",
+                    "¡{0}, {1} entró en la sala!", "{0}, {1} est connecté !", "{0}、{1}が参加したよ！",
+                    "{0}, {1} 접속했어!", "{0}, {1} dołączył!", "{0}, {1} entrou na sala!", "{0}, {1} уже в комнате!"),
+                    hostPlayer.characterData?.characterName ?? ModLocalization.DefaultPlayerTitle(), wantName), 4.5f);
                 DropOutlinePlugin.L.LogInfo($"[玩家模式] {message}");
                 return true;
             }
             catch (Exception e)
             {
-                message = "生成联机 AI 玩家失败：" + e.Message;
+                message = ModLocalization.Pick("生成联机 AI 玩家失败：", "Failed to spawn coop AI player: ", "Fehler beim Spawnen: ",
+                    "Error al crear jugador IA: ", "Échec apparition joueur IA : ", "協力プレイヤー生成失敗：",
+                    "협동 AI 소환 실패: ", "Błąd przyzywania gracza AI: ", "Falha ao gerar jogador IA: ", "Ошибка создания ИИ-игрока: ") + e.Message;
                 DropOutlinePlugin.L.LogWarning($"[玩家模式] TrySpawnAsNetPlayer 异常: {e.Message}");
                 return false;
             }
@@ -1065,12 +1225,19 @@ namespace Dropoutline
                 }
 
                 _lastCoopStatus = "despawned";
-                message = removedAny ? "已让 AI 玩家/化身离队退房。" : "当前没有在场的 AI 玩家或化身。";
+                message = removedAny
+                    ? ModLocalization.Pick("已让 AI 玩家/化身离队退房。", "Removed AI player/companion from the squad.", "KI-Spieler/Begleiter entfernt.",
+                        "Se retiró al jugador/compañero IA.", "Joueur/compagnon IA retiré.", "AI プレイヤー/分身を解散しました。",
+                        "AI 플레이어/분신이 방에서 퇴장했습니다.", "Usunięto gracza/towarzysza AI.", "Jogador/companheiro IA removido.", "ИИ-игрок/напарник покинул отряд.")
+                    : ModLocalization.Pick("当前没有在场的 AI 玩家或化身。", "No active AI player or companion right now.", "Kein aktiver KI-Spieler vorhanden.",
+                        "No hay ningún jugador IA activo.", "Aucun joueur IA actif.", "現在参加中の AI はいません。",
+                        "현재 참여 중인 AI가 없습니다.", "Brak aktywnego gracza AI.", "Nenhum jogador IA ativo no momento.", "Сейчас нет активного ИИ-игрока.");
                 return true;
             }
             catch (Exception e)
             {
-                message = "收回 AI 角色失败：" + e.Message;
+                message = ModLocalization.Pick("收回 AI 角色失败：", "Failed to dismiss AI character: ", "Entfernen fehlgeschlagen: ",
+                    "Error al retirar IA: ", "Échec du retrait : ", "撤収失敗：", "소환 해제 실패: ", "Błąd odwołania AI: ", "Falha ao dispensar IA: ", "Ошибка отзыва ИИ: ") + e.Message;
                 return false;
             }
         }
@@ -1081,7 +1248,9 @@ namespace Dropoutline
             var player = GameController.instance?.playerCharacter;
             if (player == null)
             {
-                message = "玩家角色不在场景中。";
+                message = ModLocalization.Pick("玩家角色不在场景中。", "Player character is not in the scene.", "Spieler nicht in der Szene.",
+                    "El jugador no está en la escena.", "Joueur absent de la scène.", "プレイヤーがシーンにいません。",
+                    "플레이어 캐릭터가 장면에 없습니다.", "Brak postaci gracza na scenie.", "O jogador não está na cena.", "Персонаж игрока не на сцене.");
                 return false;
             }
 
@@ -1096,13 +1265,17 @@ namespace Dropoutline
                         _netPlayerCtrl.characterData.zLevel = player.characterData.zLevel;
                     _netPlayerCtrl.TeleportTo(target, false);
                     PushNetPlayerSnapshot(_netPlayerCtrl, Vector2.zero, _netLook, false);
-                    ShowAvatarBubble("我过来了！", 3f);
-                    message = $"已将 AI 玩家 {AiCompanion.GetNpcName()} 传送到你身边。";
+                    ShowAvatarBubble(ModLocalization.Pick("我过来了！", "Coming over!", "Ich komme!", "¡Allá voy!", "J'arrive !", "今向かいます！", "지금 갈게요!", "Idę do ciebie!", "Estou indo!", "Уже бегу!"), 3f);
+                    message = string.Format(ModLocalization.Pick(
+                        "已将 AI 玩家 {0} 传送到你身边。", "Teleported AI player {0} to you.", "KI-Spieler {0} zu dir teleportiert.",
+                        "Jugador IA {0} teletransportado contigo.", "Joueur IA {0} téléporté vers vous.", "AI プレイヤー {0} をあなたの近くに移動しました。",
+                        "AI 플레이어 {0}을(를) 곁으로 이동했습니다.", "Przeteleportowano {0} do ciebie.", "Jogador IA {0} teleportado até você.", "ИИ-игрок {0} перемещён к вам."), AiCompanion.GetNpcName());
                     return true;
                 }
                 catch (Exception e)
                 {
-                    message = "传送 AI 玩家失败：" + e.Message;
+                    message = ModLocalization.Pick("传送 AI 玩家失败：", "Failed to teleport AI player: ", "Teleport fehlgeschlagen: ",
+                        "Error al teletransportar: ", "Échec téléportation : ", "移動失敗：", "이동 실패: ", "Błąd teleportacji: ", "Falha ao teleportar: ", "Ошибка телепортации: ") + e.Message;
                     return false;
                 }
             }
@@ -1120,7 +1293,9 @@ namespace Dropoutline
                 ag = GetAvatarAgent();
                 if (ag == null || ag.character == null)
                 {
-                    message = "无法定位 AI 玩家位置。";
+                    message = ModLocalization.Pick("无法定位 AI 玩家位置。", "Cannot locate AI player.", "KI-Spieler nicht gefunden.",
+                        "No se encuentra al jugador IA.", "Joueur IA introuvable.", "AI の位置が見つかりません。",
+                        "AI 위치를 찾을 수 없습니다.", "Nie można namierzyć gracza AI.", "Não é possível localizar o jogador IA.", "Не удалось найти ИИ-игрока.");
                     return false;
                 }
             }
@@ -1130,13 +1305,16 @@ namespace Dropoutline
                 Vector2 target = new Vector2(player.transform.position.x + 1.6f, player.transform.position.y - 0.6f);
                 ag.character.TeleportTo(target, false);
                 SyncAvatarToNetworkClients(ag.humanCharacter);
-                ShowAvatarBubble("到你身边啦！", 3f);
-                message = $"已将 {AiCompanion.GetNpcName()} 传送到你身边。";
+                ShowAvatarBubble(ModLocalization.Pick("到你身边啦！", "Right by your side!", "Bin da!", "¡Ya estoy contigo!", "Me voilà !", "すぐそばに着きました！", "곁에 도착했어요!", "Jestem obok!", "Cheguei!", "Я уже рядом!"), 3f);
+                message = string.Format(ModLocalization.Pick(
+                    "已将 {0} 传送到你身边。", "Teleported {0} to you.", "{0} zu dir teleportiert.", "{0} teletransportado contigo.",
+                    "{0} téléporté près de vous.", "{0} をあなたの近くに移動しました。", "{0}을(를) 곁으로 이동했습니다.", "Przeteleportowano {0} do ciebie.", "{0} teleportado até você.", "{0} перемещён к вам."), AiCompanion.GetNpcName());
                 return true;
             }
             catch (Exception e)
             {
-                message = "传送失败：" + e.Message;
+                message = ModLocalization.Pick("传送失败：", "Teleport failed: ", "Teleport fehlgeschlagen: ", "Error al teletransportar: ",
+                    "Échec téléportation : ", "移動失敗：", "이동 실패: ", "Błąd teleportacji: ", "Falha ao teleportar: ", "Ошибка телепортации: ") + e.Message;
                 return false;
             }
         }
@@ -1171,12 +1349,12 @@ namespace Dropoutline
                         dist = Vector2.Distance(_netPlayerCtrl.transform.position, player.transform.position);
                     var st = _netPlayerCtrl.characterData?.characterStatusData;
                     int pct = st != null && st.maxhp > 0f ? Mathf.Clamp(Mathf.RoundToInt(st.hp * 100f / st.maxhp), 0, 100) : 100;
-                    string distTxt = dist >= 0f ? $" 距{dist:F0}m" : "";
-                    return $"{AiCompanion.GetNpcName()}[联机玩家ID:{_aiNetPlayerId}] · {_behaviorMode} · HP {pct}%{distTxt}";
+                    string distTxt = dist >= 0f ? (ModLocalization.IsZh ? $" 距{dist:F0}m" : $" {dist:F0}m") : "";
+                    return $"{AiCompanion.GetNpcName()}[{ModLocalization.Pick("联机玩家ID:", "Coop ID:", "Koop-ID:", "ID Koop:", "ID Coop :", "通信ID:", "멀티 ID:", "ID:", "ID Coop:", "ID: ")}{_aiNetPlayerId}] · {_behaviorMode} · HP {pct}%{distTxt}";
                 }
                 catch
                 {
-                    return $"{AiCompanion.GetNpcName()}[联机玩家ID:{_aiNetPlayerId}] · {_behaviorMode}";
+                    return $"{AiCompanion.GetNpcName()}[{ModLocalization.Pick("联机玩家ID:", "Coop ID:", "Koop-ID:", "ID Koop:", "ID Coop :", "通信ID:", "멀티 ID:", "ID:", "ID Coop:", "ID: ")}{_aiNetPlayerId}] · {_behaviorMode}";
                 }
             }
 
@@ -1184,8 +1362,11 @@ namespace Dropoutline
             if (ag == null || ag.npcData == null || ag.character == null)
             {
                 if (NetworkManager.instance != null && NetworkManager.isOnline && NetworkManager.isClient && !NetworkManager.isHost)
-                    return AiCompanion.CoopDriveLocalWhenClient ? $"客户端自主协同 ({_behaviorMode})" : "联机客户端等待中";
-                return "AI 玩家未上线";
+                    return AiCompanion.CoopDriveLocalWhenClient
+                        ? $"{ModLocalization.Pick("客户端自主协同", "Client local assist", "Client-Lokale Begleitung", "Asistencia local", "Suivi local client", "クライアント自律協力", "클라이언트 자율 협동", "Lokalna asysta klienta", "Assistência local", "Локальная помощь")} ({_behaviorMode})"
+                        : ModLocalization.Pick("联机客户端等待中", "Client waiting", "Client wartet", "Cliente en espera", "Client en attente", "クライアント待機中", "클라이언트 대기 중", "Klient oczekuje", "Cliente aguardando", "Клиент в ожидании");
+                return ModLocalization.Pick("AI 玩家未上线", "AI player offline", "KI-Spieler offline", "Jugador IA desconectado",
+                    "Joueur IA hors ligne", "AI プレイヤー未参加", "AI 플레이어 오프라인", "Gracz AI offline", "Jogador IA offline", "ИИ-игрок не в сети");
             }
 
             try
@@ -1749,7 +1930,17 @@ namespace Dropoutline
             message = "";
             if (!AiCompanion.IsPlayerMode() && !AiCompanion.IsDshMode)
             {
-                message = "请先在设置中将「表现形式」切换为玩家模式（或使用 DSH 模式）。";
+                message = ModLocalization.Pick(
+                    "请先在设置中将「表现形式」切换为玩家模式（或使用 DSH 模式）。",
+                    "Switch Form to Coop Player Mode (or use DSH Mode) in settings first.",
+                    "Wechsle in den Einstellungen zu „Koop-Spieler“ (oder DSH-Modus).",
+                    "Cambia el Modo de presentación a Jugador cooperativo (o usa DSH).",
+                    "Passez en mode Joueur coopératif (ou mode DSH) dans les paramètres.",
+                    "先に設定で「動作形態」をプレイヤーモード（またはDSH）に切り替えてください。",
+                    "먼저 설정에서 '활동 형태'를 플레이어 모드(또는 DSH)로 전환하세요.",
+                    "Najpierw przełącz tryb na Gracz kooperacyjny (lub tryb DSH) w ustawieniach.",
+                    "Altere para o modo Jogador Cooperativo (ou modo DSH) nas configurações.",
+                    "Сначала переключите форму на «Игрок (кооператив)» (или режим DSH).");
                 return false;
             }
 
@@ -1774,8 +1965,12 @@ namespace Dropoutline
                 case "follow":
                     SetBehaviorMode("follow");
                     EnsureOrFindAvatarNpc(true, out _);
-                    ShowAvatarBubble("好嘞，我紧跟着你！", 3f);
-                    message = "AI 玩家已切换为紧跟模式。";
+                    ShowAvatarBubble(ModLocalization.Pick("好嘞，我紧跟着你！", "Got it, staying right behind you!", "Alles klar, bleibe dicht dran!",
+                        "¡Entendido, te sigo de cerca!", "Compris, je vous suis de près !", "了解、すぐ後ろにつきます！",
+                        "알겠어, 바짝 따라갈게!", "Jasne, trzymam się blisko!", "Beleza, vou bem atrás de você!", "Понял, держусь рядом!"), 3f);
+                    message = ModLocalization.Pick("AI 玩家已切换为紧跟模式。", "AI player switched to Follow mode.", "KI-Spieler auf Folgen gestellt.",
+                        "Jugador IA en modo Seguir.", "Joueur IA en mode Suivre.", "追従モードに切り替えました。",
+                        "따라가기 모드로 전환되었습니다.", "Gracz AI w trybie Podążania.", "Jogador IA no modo Seguir.", "ИИ переключён в режим следования.");
                     return true;
 
                 case "combat":
@@ -1784,24 +1979,36 @@ namespace Dropoutline
                 case "cover":
                     SetBehaviorMode("combat");
                     EnsureOrFindAvatarNpc(true, out _);
-                    ShowAvatarBubble("交给我来掩护开火！", 3f);
-                    message = "AI 玩家已切换为积极迎战模式。";
+                    ShowAvatarBubble(ModLocalization.Pick("交给我来掩护开火！", "Covering fire! Leave them to me!", "Ich gebe Feuerschutz!",
+                        "¡Yo te cubro!", "Je couvre vos arrières !", "援護射撃は任せてください！",
+                        "엄호 사격할게, 맡겨줘!", "Osłaniam cię!", "Deixa comigo, dando cobertura!", "Прикрываю огнём!"), 3f);
+                    message = ModLocalization.Pick("AI 玩家已切换为积极迎战模式。", "AI player switched to Combat mode.", "KI-Spieler auf Kampfmodus gestellt.",
+                        "Jugador IA en modo Combate.", "Joueur IA en mode Combat.", "積極交戦モードに切り替えました。",
+                        "적극 교전 모드로 전환되었습니다.", "Gracz AI w trybie Walki.", "Jogador IA no modo Combate.", "ИИ переключён в боевой режим.");
                     return true;
 
                 case "guard":
                 case "stay":
                 case "hold":
                     SetBehaviorMode("guard");
-                    ShowAvatarBubble("收到，我守在这里！", 3f);
-                    message = "AI 玩家已切换为原地驻守模式。";
+                    ShowAvatarBubble(ModLocalization.Pick("收到，我守在这里！", "Copy that, holding this spot!", "Verstanden, halte diese Position!",
+                        "¡Recibido, mantengo la posición!", "Reçu, je garde la position !", "了解、ここを守ります！",
+                        "알겠어, 이 자리를 지킬게!", "Przyjąłem, bronię pozycji!", "Entendido, fico guardando aqui!", "Принял, держу позицию!"), 3f);
+                    message = ModLocalization.Pick("AI 玩家已切换为原地驻守模式。", "AI player switched to Guard mode.", "KI-Spieler auf Wache gestellt.",
+                        "Jugador IA en modo Guardia.", "Joueur IA en mode Garde.", "その場待機モードに切り替えました。",
+                        "제자리 수비 모드로 전환되었습니다.", "Gracz AI w trybie Warty.", "Jogador IA no modo Guarda.", "ИИ переключён в режим охраны.");
                     return true;
 
                 case "scavenge":
                 case "loot":
                     SetBehaviorMode("scavenge");
                     EnsureOrFindAvatarNpc(true, out _);
-                    ShowAvatarBubble("边走边帮你盯着物资！", 3f);
-                    message = "AI 玩家已切换为协同拾荒模式。";
+                    ShowAvatarBubble(ModLocalization.Pick("边走边帮你盯着物资！", "Keeping an eye on loot along the way!", "Halte Ausschau nach Beute!",
+                        "¡Vigilando el botín por el camino!", "Je repère le butin en chemin !", "移動しながら物資を見ておきます！",
+                        "따라가면서 주변 물자도 살필게!", "Wypatruję łupów po drodze!", "De olho nos suprimentos no caminho!", "Буду подмечать добычу по пути!"), 3f);
+                    message = ModLocalization.Pick("AI 玩家已切换为协同拾荒模式。", "AI player switched to Scavenge mode.", "KI-Spieler auf Plündern gestellt.",
+                        "Jugador IA en modo Saqueo.", "Joueur IA en mode Pillage.", "探索協力モードに切り替えました。",
+                        "협동 수색 모드로 전환되었습니다.", "Gracz AI w trybie Szabrownictwa.", "Jogador IA no modo Coleta.", "ИИ переключён в режим поиска добычи.");
                     return true;
 
                 case "heal":
@@ -1810,26 +2017,39 @@ namespace Dropoutline
                         _netPlayerCtrl.HealAllBodyPartInjuries();
                         var st = _netPlayerCtrl.characterData?.characterStatusData;
                         if (st != null) st.hp = st.maxhp;
-                        ShowAvatarBubble("状态拉满了！", 2.5f);
-                        message = "已为 AI 玩家恢复伤势与生命。";
+                        ShowAvatarBubble(ModLocalization.Pick("状态拉满了！", "Back in top shape!", "Wieder voll fit!", "¡Listo y al máximo!",
+                            "En pleine forme !", "体調万全です！", "컨디션 최고!", "W pełni sił!", "Tudo pronto de novo!", "Снова в полной форме!"), 2.5f);
+                        message = ModLocalization.Pick("已为 AI 玩家恢复伤势与生命。", "Restored AI player health and injuries.",
+                            "KI-Spieler geheilt.", "Salud de jugador IA restaurada.", "Santé du joueur IA restaurée.",
+                            "AI プレイヤーの負傷と体力を回復しました。", "AI 플레이어의 부상과 체력을 회복했습니다.",
+                            "Uleczono gracza AI.", "Vida e ferimentos do jogador IA restaurados.", "Здоровье и раны ИИ-игрока восстановлены.");
                         return true;
                     }
                     var agH = GetAvatarAgent();
                     if (agH?.humanCharacter != null)
                     {
                         agH.humanCharacter.FullyHealInjuries();
-                        ShowAvatarBubble("状态拉满了！", 2.5f);
-                        message = "已为 AI 角色恢复伤势。";
+                        ShowAvatarBubble(ModLocalization.Pick("状态拉满了！", "Back in top shape!", "Wieder voll fit!", "¡Listo y al máximo!",
+                            "En pleine forme !", "体調万全です！", "컨디션 최고!", "W pełni sił!", "Tudo pronto de novo!", "Снова в полной форме!"), 2.5f);
+                        message = ModLocalization.Pick("已为 AI 角色恢复伤势。", "Healed AI companion injuries.",
+                            "KI-Begleiter geheilt.", "Heridas del compañero IA curadas.", "Blessures du compagnon soignées.",
+                            "AI キャラの負傷を回復しました。", "AI 캐릭터의 부상을 회복했습니다.",
+                            "Wyleczono towarzysza AI.", "Ferimentos do companheiro IA curados.", "Раны ИИ-персонажа вылечены.");
                         return true;
                     }
-                    message = "AI 玩家尚未上场。";
+                    message = ModLocalization.Pick("AI 玩家尚未上场。", "AI player has not spawned yet.",
+                        "KI-Spieler noch nicht im Spiel.", "El jugador IA aún no ha aparecido.", "Le joueur IA n'est pas encore apparu.",
+                        "AI プレイヤーはまだ参加していません。", "AI 플레이어가 아직 스폰되지 않았습니다.", "Gracz AI jeszcze nie dołączył.",
+                        "Jogador IA ainda não entrou.", "ИИ-игрок ещё не появился.");
                     return false;
 
                 case "reload":
                     if (IsNetPlayerActive)
                     {
                         _netPlayerCtrl.ReloadButtonDown();
-                        message = "已让 AI 玩家换弹。";
+                        message = ModLocalization.Pick("已让 AI 玩家换弹。", "Instructed AI player to reload.", "KI-Spieler lädt nach.",
+                            "Jugador IA recargando.", "Le joueur IA recharge.", "AI プレイヤーをリロードさせました。",
+                            "AI 플레이어에게 재장전을 지시했습니다.", "Gracz AI przeładowuje.", "Jogador IA recarregando.", "ИИ-игрок перезаряжается.");
                         return true;
                     }
                     var agR = GetAvatarAgent();
@@ -1837,10 +2057,16 @@ namespace Dropoutline
                     {
                         agR.CheckAndReloadMagazine();
                         agR.humanCharacter?.ReloadButtonDown();
-                        message = "已让 AI 角色检查并换弹。";
+                        message = ModLocalization.Pick("已让 AI 角色检查并换弹。", "Instructed AI character to check and reload.", "KI-Charakter prüft und lädt nach.",
+                            "El personaje IA revisa y recarga.", "Le compagnon vérifie et recharge.", "AI キャラに残弾確認とリロードを指示しました。",
+                            "AI 캐릭터에게 장탄 확인 및 재장전을 지시했습니다.", "Towarzysz AI sprawdza i przeładowuje.",
+                            "Companheiro IA verificando e recarregando.", "ИИ проверяет оружие и перезаряжается.");
                         return true;
                     }
-                    message = "AI 玩家尚未上场。";
+                    message = ModLocalization.Pick("AI 玩家尚未上场。", "AI player has not spawned yet.",
+                        "KI-Spieler noch nicht im Spiel.", "El jugador IA aún no ha aparecido.", "Le joueur IA n'est pas encore apparu.",
+                        "AI プレイヤーはまだ参加していません。", "AI 플레이어가 아직 스폰되지 않았습니다.", "Gracz AI jeszcze nie dołączył.",
+                        "Jogador IA ainda não entrou.", "ИИ-игрок ещё не появился.");
                     return false;
 
                 case "light":
@@ -1849,7 +2075,11 @@ namespace Dropoutline
                     {
                         if (_netPlayerCtrl.isFlashLightOn) _netPlayerCtrl.TurnOffLight();
                         else _netPlayerCtrl.TurnOnLight();
-                        message = $"已切换 AI 玩家手电：{(_netPlayerCtrl.isFlashLightOn ? "开" : "关")}";
+                        message = (_netPlayerCtrl.isFlashLightOn
+                            ? ModLocalization.Pick("已切换 AI 玩家手电：开", "AI player flashlight: ON", "KI-Taschenlampe: AN", "Linterna IA: ON",
+                                "Lampe IA : ON", "AI プレイヤーのライト：オン", "AI 플레이어 손전등: 켜짐", "Latarka gracza AI: WŁ.", "Lanterna IA: LIGADA", "Фонарик ИИ: ВКЛ")
+                            : ModLocalization.Pick("已切换 AI 玩家手电：关", "AI player flashlight: OFF", "KI-Taschenlampe: AUS", "Linterna IA: OFF",
+                                "Lampe IA : OFF", "AI プレイヤーのライト：オフ", "AI 플레이어 손전등: 꺼짐", "Latarka gracza AI: WYŁ.", "Lanterna IA: DESLIGADA", "Фонарик ИИ: ВЫКЛ"));
                         return true;
                     }
                     var agL = GetAvatarAgent();
@@ -1857,10 +2087,17 @@ namespace Dropoutline
                     {
                         if (agL.humanCharacter.isFlashLightOn) agL.humanCharacter.TurnOffLight();
                         else agL.humanCharacter.TurnOnLight();
-                        message = $"已切换 AI 角色手电：{(agL.humanCharacter.isFlashLightOn ? "开" : "关")}";
+                        message = (agL.humanCharacter.isFlashLightOn
+                            ? ModLocalization.Pick("已切换 AI 角色手电：开", "AI character flashlight: ON", "KI-Begleiter-Lampe: AN", "Linterna compañero IA: ON",
+                                "Lampe compagnon : ON", "AI キャラのライト：オン", "AI 캐릭터 손전등: 켜짐", "Latarka AI: WŁ.", "Lanterna companheiro IA: LIGADA", "Фонарик напарника: ВКЛ")
+                            : ModLocalization.Pick("已切换 AI 角色手电：关", "AI character flashlight: OFF", "KI-Begleiter-Lampe: AUS", "Linterna compañero IA: OFF",
+                                "Lampe compagnon : OFF", "AI キャラのライト：オフ", "AI 캐릭터 손전등: 꺼짐", "Latarka AI: WYŁ.", "Lanterna companheiro IA: DESLIGADA", "Фонарик напарника: ВЫКЛ"));
                         return true;
                     }
-                    message = "AI 玩家尚未上场。";
+                    message = ModLocalization.Pick("AI 玩家尚未上场。", "AI player has not spawned yet.",
+                        "KI-Spieler noch nicht im Spiel.", "El jugador IA aún no ha aparecido.", "Le joueur IA n'est pas encore apparu.",
+                        "AI プレイヤーはまだ参加していません。", "AI 플레이어가 아직 스폰되지 않았습니다.", "Gracz AI jeszcze nie dołączył.",
+                        "Jogador IA ainda não entrou.", "ИИ-игрок ещё не появился.");
                     return false;
 
                 case "status":
@@ -1871,10 +2108,14 @@ namespace Dropoutline
                     if (!string.IsNullOrEmpty(verb))
                     {
                         SetBehaviorMode(verb);
-                        message = $"玩家模式姿态已设置为：{_behaviorMode}";
+                        message = ModLocalization.Pick("玩家模式姿态已设置为：", "AI player stance set to: ", "KI-Spielerhaltung gesetzt auf: ",
+                            "Postura de jugador IA: ", "Posture joueur IA : ", "プレイヤーモードの行動方針：",
+                            "플레이어 모드 행동 설정: ", "Tryb zachowania gracza AI: ", "Postura do jogador IA: ", "Режим поведения ИИ: ") + _behaviorMode;
                         return true;
                     }
-                    message = "未知的玩家模式动作：" + op;
+                    message = ModLocalization.Pick("未知的玩家模式动作：", "Unknown coop player action: ", "Unbekannte KI-Spieleraktion: ",
+                        "Acción desconocida de jugador IA: ", "Action joueur IA inconnue : ", "不明なプレイヤー操作：",
+                        "알 수 없는 플레이어 동작: ", "Nieznana akcja gracza AI: ", "Ação desconhecida do jogador IA: ", "Неизвестное действие ИИ: ") + op;
                     return false;
             }
         }
@@ -1884,7 +2125,16 @@ namespace Dropoutline
             message = "";
             if (!AiCompanion.IsPlayerMode() && !AiCompanion.IsDshMode)
             {
-                message = "请在设置中开启「玩家模式」或 DSH 模式后操作联机房间。";
+                message = ModLocalization.Pick("请在设置中开启「玩家模式」或 DSH 模式后操作联机房间。",
+                    "Enable Coop Player Mode or DSH Mode in settings before managing rooms.",
+                    "Aktiviere „Koop-Spieler“ oder DSH-Modus für Raumfunktionen.",
+                    "Activa el modo Jugador cooperativo o DSH para usar funciones de sala.",
+                    "Activez le mode Joueur coopératif ou DSH pour gérer les salons.",
+                    "ルーム操作には設定で「プレイヤーモード」または DSH を有効にしてください。",
+                    "방 관리 전 설정에서 '플레이어 모드' 또는 DSH 모드를 켜세요.",
+                    "Włącz tryb Gracz kooperacyjny lub DSH w ustawieniach, aby zarządzać pokojami.",
+                    "Ative o modo Jogador Cooperativo ou DSH para gerenciar salas.",
+                    "Включите режим «Игрок (кооператив)» или DSH для управления комнатами.");
                 return false;
             }
 
@@ -1920,7 +2170,9 @@ namespace Dropoutline
                     return true;
 
                 default:
-                    message = "未知房间动作：" + op;
+                    message = ModLocalization.Pick("未知房间动作：", "Unknown room action: ", "Unbekannte Raumaktion: ",
+                        "Acción de sala desconocida: ", "Action salon inconnue : ", "不明なルーム操作：",
+                        "알 수 없는 방 동작: ", "Nieznana akcja pokoju: ", "Ação de sala desconhecida: ", "Неизвестное действие с комнатой: ") + op;
                     return false;
             }
         }
@@ -1934,33 +2186,40 @@ namespace Dropoutline
             reply = "";
             if ((!AiCompanion.IsPlayerMode() && !AiCompanion.IsDshMode) || string.IsNullOrWhiteSpace(text)) return false;
             var t = text.Trim();
+            var low = t.ToLowerInvariant();
 
-            if (t.Contains("召唤") || t.Contains("进房陪玩") || t.Contains("上线") || t.Contains("生成化身"))
+            if (t.Contains("召唤") || t.Contains("进房陪玩") || t.Contains("上线") || t.Contains("生成化身") ||
+                low.Contains("spawn ai") || low.Contains("summon ai") || low == "spawn" || low == "summon" || low.Contains("join room"))
             {
                 ExecuteCoopOp("spawn", "", out reply);
                 return true;
             }
-            if (t.Contains("过来") || t.Contains("传送到我") || t.Contains("到我身边"))
+            if (t.Contains("过来") || t.Contains("传送到我") || t.Contains("到我身边") ||
+                low.Contains("come here") || low.Contains("teleport to me") || low == "tp")
             {
                 ExecuteCoopOp("tp", "", out reply);
                 return true;
             }
-            if (t.Contains("原地待命") || t.Contains("守在这里") || t.Contains("别动") || t.Contains("驻守"))
+            if (t.Contains("原地待命") || t.Contains("守在这里") || t.Contains("别动") || t.Contains("驻守") ||
+                low.Contains("hold position") || low.Contains("stay here") || low.Contains("guard here"))
             {
                 ExecuteCoopOp("guard", "", out reply);
                 return true;
             }
-            if (t.Contains("跟我走") || t.Contains("紧跟我") || t.Contains("回来跟着"))
+            if (t.Contains("跟我走") || t.Contains("紧跟我") || t.Contains("回来跟着") ||
+                low.Contains("follow me") || low.Contains("stay close"))
             {
                 ExecuteCoopOp("follow", "", out reply);
                 return true;
             }
-            if (t.Contains("开启联机") || t.Contains("开个房间") || t.Contains("开房间"))
+            if (t.Contains("开启联机") || t.Contains("开个房间") || t.Contains("开房间") ||
+                low.Contains("host room") || low.Contains("open room"))
             {
                 ExecuteRoomOp("host", "", out reply);
                 return true;
             }
-            if (t.Contains("退出房间") || t.Contains("断开联机"))
+            if (t.Contains("退出房间") || t.Contains("断开联机") ||
+                low.Contains("leave room") || low.Contains("disconnect"))
             {
                 ExecuteRoomOp("leave", "", out reply);
                 return true;

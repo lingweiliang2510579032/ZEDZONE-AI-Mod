@@ -100,6 +100,16 @@ test('state content and age use same open handle even if path was replaced', asy
   assert.deepEqual(operations.map(op => op[0]), ['open', 'read', 'handle-stat', 'close']);
 });
 
+test('roleContext emits localized reply-language guidance when gameLanguage is non-zh', async () => {
+  const { roleContext } = await import('../bridge.js');
+  const enState = { ...stateOf(), context: { ...stateOf().context, gameLanguage: 'en' } };
+  const enPrompt = roleContext(enState);
+  assert.ok(enPrompt.includes('gameLanguage=en'));
+  assert.ok(enPrompt.includes('English'));
+  const zhPrompt = roleContext(stateOf());
+  assert.ok(zhPrompt.includes('自然中文回应'));
+});
+
 test('state parse/stat failures close open handle and return explicit read errors', async () => {
   for (const fail of ['parse', 'stat']) {
     let closed = 0;

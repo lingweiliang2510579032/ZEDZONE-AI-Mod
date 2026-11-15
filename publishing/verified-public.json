@@ -1,18 +1,21 @@
 {
   "itemId": 3840378952,
   "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3840378952",
-  "title": "AI伴侣（测试版v0.1）",
+  "title": "AI伴侣（测试版v0.2）",
+  "titleEn": "AI Companion (Beta v0.2)",
   "visibility": 0,
   "ownerCorrect": true,
   "consumerApp": 1211600,
-  "fileSize": 414955,
-  "previewSize": 143341,
+  "fileSize": 638668,
+  "previewSize": 139928,
   "children": [
     3834614258
   ],
   "descriptionExactMatch": true,
+  "descriptionEnExactMatch": true,
   "githubIncluded": true,
-  "descriptionBytes": 6246,
+  "descriptionBytes": 3658,
+  "descriptionEnBytes": 3377,
   "acceptedForUse": false,
   "banned": false
 }
