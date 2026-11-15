@@ -751,6 +751,9 @@ namespace Dropoutline
             {
                 if (!HasActiveMapController()) { Speech.Clear(); return; }   // 主菜单/加载中不跑 AI 逻辑
 
+                if (CfgChatViaOfficial == null || CfgChatViaOfficial.Value)
+                    AiNetChat.EnsureOfficialChatReady();
+
                 if (IsPlayerMode())
                     AiCoopPlayer.Tick();
 
@@ -1597,7 +1600,13 @@ namespace Dropoutline
             {
                 if (AiCoopPlayer.TryHandleDirectCoopChat(text, out string directReply) && !string.IsNullOrEmpty(directReply))
                 {
-                    ChatInput.Log(IsPlayerMode() ? "玩家模式指令" : "联机指令", directReply);
+                    bool shownOfficial = false;
+                    if (CfgChatViaOfficial == null || CfgChatViaOfficial.Value)
+                    {
+                        try { shownOfficial = AiNetChat.Say(directReply); } catch { }
+                    }
+                    if (!shownOfficial)
+                        ChatInput.Log(IsPlayerMode() ? "玩家模式指令" : "联机指令", directReply);
                     AiCoopPlayer.ShowAvatarBubble(directReply, 3.5f);
                 }
             }
@@ -1883,7 +1892,8 @@ namespace Dropoutline
                     AiTaskRuntime.OnPlayerChat(_pendingChatId, cmd.chat);
                     AiMemory.AddChat(PlayerName(), cmd.chat, AiMemory.TierImportant);
                     AiMemory.Save(true);
-                    ChatInput.Log(PlayerName(), cmd.chat);
+                    if (!((CfgChatViaOfficial == null || CfgChatViaOfficial.Value) && AiNetChat.Available))
+                        ChatInput.Log(PlayerName(), cmd.chat);
                     DropOutlinePlugin.L.LogInfo($"[AI队友] 玩家说：{cmd.chat}");
                 }
 
@@ -2351,6 +2361,8 @@ namespace Dropoutline
         private static string NpcName() => CfgNpcName != null && !string.IsNullOrEmpty(CfgNpcName.Value) ? CfgNpcName.Value : "阿岳";
         /// <summary>供其他模块（官方聊天接入层）读取她的显示名。</summary>
         internal static string AiDisplayName() => NpcName();
+        /// <summary>供官方聊天单人发送回显使用的玩家名称。</summary>
+        internal static string PlayerDisplayName() => PlayerName();
         private static string PlayerName() => CfgPlayerName != null && !string.IsNullOrEmpty(CfgPlayerName.Value) ? CfgPlayerName.Value : "队长";
 
         // ───────────────────────── LLM ─────────────────────────
@@ -2427,12 +2439,15 @@ namespace Dropoutline
             // Only the actual displayed text enters chat/short-term/long-term memory.
             // Never use the original unshown long model response as a memory fact.
             RecordRecentAiLine(line.Text);
-            ChatInput.Log(NpcName(), line.Text);
-            // 正式版：她的台词同时进官方聊天框，联机时和其他玩家同一个频道
-            if (CfgChatViaOfficial == null || CfgChatViaOfficial.Value)
+            bool useOfficial = CfgChatViaOfficial == null || CfgChatViaOfficial.Value;
+            bool shownInOfficial = false;
+            // 正式版：她的台词进左侧官方聊天框，不再同时弹出左下角重复浮层；仅在官方聊天未启用或不可用时回退
+            if (useOfficial)
             {
-                try { AiNetChat.Say(line.Text); } catch { }
+                try { shownInOfficial = AiNetChat.Say(line.Text); } catch { }
             }
+            if (!shownInOfficial)
+                ChatInput.Log(NpcName(), line.Text);
             if (IsPlayerMode() || IsDshMode)
             {
                 try { AiCoopPlayer.ShowAvatarBubble(line.Text, 4.5f); } catch { }

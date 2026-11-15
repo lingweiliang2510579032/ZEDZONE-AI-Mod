@@ -7,7 +7,7 @@ namespace Dropoutline
     // Pure managed presentation only. Never schedules a gameplay/task action.
     internal sealed class AiSpeechQueue
     {
-        internal const int MaxLines = 3, MaxLineCharacters = 40, MaxTotalCharacters = 100;
+        internal const int MaxLines = 3, MaxLineCharacters = 36, MaxTotalCharacters = 100;
         internal const float IntervalSeconds = 2.5f;
         internal readonly struct Line
         {
@@ -46,7 +46,11 @@ namespace Dropoutline
             return true;
         }
         private static bool Boundary(char c) => c == '。' || c == '！' || c == '？' || c == '!' || c == '?' || c == '；' || c == ';' || c == '\n';
+        private static bool MinorBoundary(char c) => c == '，' || c == ',' || c == '：' || c == ':' || c == '、' || c == '～' || c == '~' || c == '—' || c == '–' || c == '…' || char.IsWhiteSpace(c);
+        private static bool ClosingTrail(char c) => c == '”' || c == '"' || c == '’' || c == '\'' || c == '」' || c == '』' || c == '）' || c == ')' || c == '】' || c == ']';
+        private static bool IsTokenChar(char c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
         private static int Width(string text, int index) => char.IsHighSurrogate(text[index]) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]) ? 2 : 1;
+        private static int PrevScalar(string text, int index) => index >= 2 && char.IsLowSurrogate(text[index - 1]) && char.IsHighSurrogate(text[index - 2]) ? index - 2 : index - 1;
         internal static int Characters(string text)
         {
             int count = 0;
@@ -59,6 +63,35 @@ namespace Dropoutline
             while (i < text.Length && count-- > 0) i += Width(text, i);
             return text.Substring(0, i);
         }
+        private static int BackoffMidToken(string text, int start, int end)
+        {
+            if (end <= start || end >= text.Length) return end;
+            int k = end;
+            if (IsTokenChar(text[k - 1]) && IsTokenChar(text[k]))
+            {
+                while (k > start)
+                {
+                    int prev = PrevScalar(text, k);
+                    if (!IsTokenChar(text[prev])) break;
+                    k = prev;
+                }
+                if (k > start) return k;
+            }
+            return end;
+        }
+        private static int BackoffTrailingToken(string text)
+        {
+            int k = text.Length;
+            while (k > 0)
+            {
+                int prev = PrevScalar(text, k);
+                if (!IsTokenChar(text[prev])) break;
+                k = prev;
+            }
+            return k > 0 ? k : text.Length;
+        }
+        private static string TrimTrailingMinorPunct(string text) =>
+            string.IsNullOrEmpty(text) ? "" : text.TrimEnd(' ', '\t', '，', ',', '、', '：', ':', '～', '~', '—', '–', '-', '…');
         internal static List<string> Split(string original)
         {
             var output = SplitCore(original ?? "");
@@ -90,14 +123,30 @@ namespace Dropoutline
             {
                 while (start < text.Length && char.IsWhiteSpace(text[start])) start++;
                 if (start >= text.Length) break;
-                int end = start, count = 0, stop = -1;
+                int end = start, count = 0, stop = -1, minorStop = -1;
                 int limit = Math.Min(MaxLineCharacters, MaxTotalCharacters - total);
                 while (end < text.Length && count < limit)
                 {
                     char c = text[end]; end += Width(text, end); count++;
-                    if (Boundary(c)) { stop = end; break; }
+                    if (Boundary(c))
+                    {
+                        while (end < text.Length && count < limit && ClosingTrail(text[end]))
+                        {
+                            end += Width(text, end); count++;
+                        }
+                        stop = end; break;
+                    }
+                    if (MinorBoundary(c)) minorStop = end;
                 }
-                if (stop > start) end = stop;
+                if (stop > start)
+                {
+                    end = stop;
+                }
+                else if (end < text.Length)
+                {
+                    // 无强句末标点时优先在小句标点（，：、～等）断行，其次退回数字/英文词边界，避免在“词条点|5”处硬截断
+                    end = minorStop > start ? minorStop : BackoffMidToken(text, start, end);
+                }
                 string part = text.Substring(start, end - start).Trim();
                 start = end;
                 if (part.Length == 0) continue;
@@ -107,7 +156,28 @@ namespace Dropoutline
             {
                 int last = output.Count - 1;
                 string part = output[last];
-                output[last] = Prefix(part, Math.Max(0, Characters(part) - 1)).TrimEnd() + "…";
+                int origChars = Characters(part);
+                bool shortened = false;
+                if (Boundary(part[part.Length - 1]))
+                {
+                    part = Prefix(part, Math.Max(0, origChars - 1));
+                    shortened = true;
+                }
+                else if (part.Length > 1 && IsTokenChar(part[part.Length - 1]) && IsTokenChar(text[start]))
+                {
+                    int backed = BackoffTrailingToken(part);
+                    if (backed < part.Length)
+                    {
+                        part = part.Substring(0, backed);
+                        shortened = true;
+                    }
+                }
+                part = TrimTrailingMinorPunct(part);
+                if (Characters(part) < origChars) shortened = true;
+                if (!shortened && (origChars >= MaxLineCharacters || total >= MaxTotalCharacters))
+                    part = TrimTrailingMinorPunct(Prefix(part, Math.Max(0, Characters(part) - 1)));
+                if (part.Length == 0) part = Prefix(output[last], Math.Max(0, origChars - 1)).TrimEnd();
+                output[last] = part + "…";
             }
             return output;
         }

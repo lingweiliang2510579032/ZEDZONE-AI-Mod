@@ -187,6 +187,11 @@ namespace Dropoutline
             {
                 _logText.text = string.Join("\n", History.ToArray());
                 if (AiCompanion.CfgShowChatLog != null && !AiCompanion.CfgShowChatLog.Value) return;
+                if ((AiCompanion.CfgChatViaOfficial == null || AiCompanion.CfgChatViaOfficial.Value) && AiNetChat.Available)
+                {
+                    if (_logRoot != null && _logRoot.activeSelf) _logRoot.SetActive(false);
+                    return;
+                }
                 _logShowUntil = Time.unscaledTime + 7f;   // 出现 7 秒后自动收起
                 if (_logRoot != null) _logRoot.SetActive(true);
             }
@@ -216,6 +221,14 @@ namespace Dropoutline
             {
                 if (_root == null) return;
 
+                bool official = AiCompanion.CfgChatViaOfficial == null || AiCompanion.CfgChatViaOfficial.Value;
+                if (official && AiNetChat.Available)
+                {
+                    if (_open) Close();
+                    if (_logRoot != null && _logRoot.activeSelf) _logRoot.SetActive(false);
+                    return;
+                }
+
                 // 聊天记录浮层：输入框打开时一直显示，否则只在有新消息后短暂显示
                 if (_logRoot != null)
                 {
@@ -224,7 +237,6 @@ namespace Dropoutline
                 }
 
                 // 正式版走官方聊天时，回车归游戏自己的聊天框，不再抢键
-                bool official = AiCompanion.CfgChatViaOfficial == null || AiCompanion.CfgChatViaOfficial.Value;
                 if (!_open && !official && Input.GetKeyDown(KeyCode.Return) && Time.unscaledTime - _closedAt > 0.35f)
                 {
                     Open();
