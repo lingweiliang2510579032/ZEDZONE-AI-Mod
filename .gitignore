@@ -26,6 +26,12 @@ JB/
 MOD2-AIPlayer/
 MOD3-AICap/
 PluginManager/
-tools/
+/tools/
 ZZProbe/
 联机配置/
+
+# Workshop publishing staging binaries & Python cache
+publishing/content/ZEDAI/*.dll
+publishing/content/ZEDAI/*.zip
+**/__pycache__/
+*.pyc

@@ -97,7 +97,7 @@ namespace Dropoutline
         private static string DisplayName(string fileName)
         {
             var lower = fileName.ToLowerInvariant();
-            if (lower.Contains("zedai") || lower.Contains("dropoutline") || lower.Contains("yuyeai")) return "ZED · AI伙伴";
+            if (lower.Contains("zedai") || lower.Contains("dropoutline") || lower.Contains("yuyeai")) return "AI伴侣（测试版v0.1）";
             if (lower.Contains("zedhighlight") || lower.Contains("yuyehighlight")) return "ZED · 持续高亮轮廓";
             if (lower.Contains("yuyepluginmanager")) return "插件管理器";
             return fileName;
@@ -181,7 +181,7 @@ namespace Dropoutline
 
             // 我们的两个 MOD：同一个 DLL，但对外是两个 MOD，各自独立开关
             // 本插件只代表 AI伙伴；「持续高亮轮廓」是另一个独立插件（YuyeHighlight.dll）
-            RenderOwnMod("ZED · AI伙伴", "AI 搭档：读局面、说话、可接管队友", AiCompanion.CfgAiEnabled, 180);
+            RenderOwnMod("AI伴侣（测试版v0.1）", "AI 搭档：读局面、说话、可接管队友", AiCompanion.CfgAiEnabled, 180);
 
             int total = _entries.Count;
             int pages = Mathf.Max(1, Mathf.CeilToInt(total / (float)PageSize));
@@ -192,7 +192,7 @@ namespace Dropoutline
             for (int i = 0; i < PageSize && start + i < total; i++)
             {
                 var e = _entries[start + i];
-                if (e.name == "ZED · AI伙伴") continue;   // 已由上面 RenderOwnMod 代表
+                if (e.name == "AI伴侣（测试版v0.1）") continue;   // 已由上面 RenderOwnMod 代表
                 float y = 100 - i * 50;
 
                 var label = NewText(_list, "Name", e.name, 22, TextAnchor.MiddleLeft);

@@ -1,0 +1,30 @@
+{
+  "appId": 1211600,
+  "owner": "76561198272019943",
+  "dependency": "3834614258",
+  "pendingCreate": false,
+  "createCall": "2822493881992945846",
+  "itemId": "3840378952",
+  "legalRequired": false,
+  "details": {
+    "id": 3840378952,
+    "title": "AI伴侣（测试版v0.1）",
+    "owner": 76561198272019943,
+    "creatorApp": 1211600,
+    "consumerApp": 1211600,
+    "visibility": 0,
+    "fileSize": 414955,
+    "previewSize": 143341,
+    "children": [
+      3834614258
+    ]
+  },
+  "uploadCall": "9998393067504064387",
+  "uploaded": true,
+  "packageHash": "d0ce4ef48986cdbfe83c009b7302f1c6b696515b8db2a6167b5539f1ec29ab29",
+  "dependencyCall": "10609248263945009919",
+  "dependencyVerified": true,
+  "publicCall": "8659477610084198191",
+  "publicVerified": true,
+  "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3840378952"
+}

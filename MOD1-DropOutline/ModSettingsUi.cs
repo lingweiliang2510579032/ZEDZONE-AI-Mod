@@ -329,7 +329,7 @@ namespace Dropoutline
             var panelImg = panel.gameObject.AddComponent<Image>();
             panelImg.color = new Color(0.055f, 0.06f, 0.055f, 0.99f);
 
-            var title = NewTextAnchored(panel, "Title", "ZED · AI 伙伴设置", 30,
+            var title = NewTextAnchored(panel, "Title", "AI伴侣（测试版v0.1）设置", 30,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, -16f), new Vector2(760f, 40f), TextAnchor.MiddleLeft);
             title.color = new Color(0.95f, 0.98f, 0.95f, 1f);
