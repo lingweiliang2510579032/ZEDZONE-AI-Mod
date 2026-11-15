@@ -1,0 +1,40 @@
+{
+  "name": "@local/zed-ai",
+  "version": "1.6.0",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "private": true,
+  "type": "module",
+  "description": "ZED AI：连接《隔离区》游戏，支持 API/DSH 双接入与聊天陪伴、接管雇佣NPC、联机玩家三种表现形式",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "connect.js",
+    "model-setup.js",
+    "control.js",
+    "bridge.js",
+    "delivery.js",
+    "game-context.js",
+    "save-archive.js",
+    "paths.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    }
+  }
+}
+

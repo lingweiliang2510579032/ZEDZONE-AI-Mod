@@ -1,0 +1,7 @@
+- insert:
+    - id: zed-ai
+      name: '@local/zed-ai'
+      config:
+        stateDir: 'D:\steam\steamapps\common\ZED ZONE\ZED AI'
+        autoConnect: true
+        workspacePath: 'D:\steam\steamapps\common\ZED ZONE\ZED AI'

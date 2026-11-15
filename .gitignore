@@ -1,0 +1,31 @@
+# Build & IDE artifacts
+**/bin/
+**/obj/
+**/*.bak*
+**/*.old
+*.user
+.vs/
+.vscode/
+
+# Scratch / temporary notes
+MOD1-DropOutline/companion_block.txt
+
+# Packaged zip (uploaded in GitHub Releases; keep release/ZEDAI.dll tracked as requested)
+release/*.zip
+
+# Keep only dsh-plugin/zed-ai/ (ignore extracted DSH docs & legacy root files in dsh-plugin/)
+dsh-plugin/*
+!dsh-plugin/zed-ai/
+
+# Other local experiments / tools / unrelated folders under ZEDZONE-MOD
+backups/
+GunMod-Mastiff/
+Highlight/
+inventory-diagnosis/
+JB/
+MOD2-AIPlayer/
+MOD3-AICap/
+PluginManager/
+tools/
+ZZProbe/
+联机配置/

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "ZED AI",
+    "description": "Connects Harness to the ZED ZONE game: reads the AI companion's situation, sends decisions, relays player chat; creates a ZED workspace with a persistent ZED session."
+  }
+}
