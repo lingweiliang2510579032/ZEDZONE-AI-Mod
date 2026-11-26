@@ -1,4 +1,4 @@
-"""Resumable Steam UGC publication for AI伴侣（测试版v0.2）.
+"""Resumable Steam UGC publication for AI伴侣（测试版v0.3）.
 Requires explicit --execute. No subscribe/unsubscribe or game-file writes.
 Uploads bilingual metadata (Simplified Chinese + English), verifies content & preview,
 ensures required dependency 3834614258, and confirms public details.
@@ -16,8 +16,8 @@ DLL = Path(r"D:\steam\steamapps\common\ZED ZONE\ZEDZONE_Data\Plugins\x86_64\stea
 APP = 1211600
 OWNER = 76561198272019943
 DEPENDENCY = 3834614258
-TITLE = "AI伴侣（测试版v0.2）"
-TITLE_EN = "AI Companion (Beta v0.2)"
+TITLE = "AI伴侣（测试版v0.3）"
+TITLE_EN = "AI Companion (Beta v0.3)"
 STATE = ROOT / "publish-state.json"
 
 u64 = C.c_uint64
@@ -224,7 +224,7 @@ def fingerprint():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--execute", action="store_true")
-    ap.add_argument("--note", default="测试版 v0.2：新增游戏本体 10 语言支持，优化使用说明与设置界面")
+    ap.add_argument("--note", default="测试版 v0.3：修复单人模式左侧官方聊天框无法正常打开与显示的问题，优化聊天断行及多语言设置界面排版")
     a = ap.parse_args()
     if not a.execute:
         raise SystemExit("No mutations performed. Pass --execute explicitly after reviewing package.")
@@ -309,7 +309,7 @@ def main():
             ]:
                 if not fn(st.u, h2, value):
                     raise RuntimeError("Set " + name + " rejected")
-            call2 = st.submit(st.u, h2, b"v0.2: Add 10-language support and updated usage guide")
+            call2 = st.submit(st.u, h2, b"Beta v0.3: Fix singleplayer left-side official chat bar display and input, improve chat line wrapping and multilingual settings layout")
             s["uploadEnCall"] = str(call2)
             save(s)
             r2 = st.wait(call2, Submitted, 3404, 180, h2)
@@ -343,7 +343,7 @@ def main():
             h = st.start(st.u, APP, item)
             if not st.setvisibility(st.u, h, 0):
                 raise RuntimeError("Set public rejected")
-            call = st.submit(st.u, h, b"Publish AI companion v0.2 with required code mod loader dependency")
+            call = st.submit(st.u, h, b"Publish AI companion Beta v0.3")
             s["publicCall"] = str(call)
             save(s)
             r = st.wait(call, Submitted, 3404, 180, h)

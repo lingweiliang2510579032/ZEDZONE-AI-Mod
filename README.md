@@ -1,4 +1,4 @@
-# AI伴侣（测试版v0.2） / AI Companion (Beta v0.2)
+# AI伴侣（测试版v0.3） / AI Companion (Beta v0.3)
 
 《隔离区（ZED ZONE）》AI 伙伴开源模组，现已完整支持**游戏本体全部 10 种官方语言**，提供 **API 直连大模型** 与 **DSH（DeepSeek Harness）本地智能体** 两种接入方式，并可在 **聊天陪伴 / 接管雇佣 NPC / 联机玩家** 三种表现形式之间自由切换。
 
@@ -30,7 +30,7 @@
 ### 方式 A：Steam 创意工坊安装（推荐）
 
 1. 先订阅必需前置加载器 **[ZED ZONE Code Mod Loader（ID：3834614258）](https://steamcommunity.com/sharedfiles/filedetails/?id=3834614258)**，打开其工坊目录并运行一次 **`install.cmd`** 完成基础框架安装（安装过一次即可）。
-2. 在 Steam 创意工坊订阅本模组 **[AI伴侣（测试版v0.2）](https://steamcommunity.com/sharedfiles/filedetails/?id=3840378952)**（ID：`3840378952`）。
+2. 在 Steam 创意工坊订阅本模组 **[AI伴侣（测试版v0.3）](https://steamcommunity.com/sharedfiles/filedetails/?id=3840378952)**（ID：`3840378952`）。
 3. 进入游戏后，点击主菜单右上角/底部的加载器界面确认启用本模组，重启游戏即生效。
 
 ### 方式 B：手动安装包下载（GitHub Releases）
@@ -38,7 +38,7 @@
 1. 同样先确保已完成前置模组加载器的基础安装。
 2. 从 [GitHub Releases](https://github.com/lingweiliang2510579032/ZEDZONE-AI-Mod/releases) 下载最新 `ZEDAI.dll`，放入：
    `<ZED ZONE 游戏目录>\BepInEx\plugins\ZEDAI.dll`
-3. 如果只使用 **API 直连模式**，只需放入 `ZEDAI.dll` 即可，无需额外安装 DSH 插件；若要使用 **DSH 本地智能体模式**，请再下载同版本的 `zed-ai-dsh-plugin-v0.2.zip` 安装到 DSH 桌面端。
+3. 如果只使用 **API 直连模式**，只需放入 `ZEDAI.dll` 即可，无需额外安装 DSH 插件；若要使用 **DSH 本地智能体模式**，请再下载同版本的 `zed-ai-dsh-plugin-v0.3.zip` 安装到 DSH 桌面端。
 
 ---
 
@@ -75,7 +75,7 @@
 
 适合配合 DSH 桌面端游玩，支持跨地图与跨重置保留同角色档案的长期对话记忆：
 
-1. 将下载的 `zed-ai-dsh-plugin-v0.2.zip` 安装并启用到 DSH 桌面端（插件 ID：`@local/zed-ai`）。
+1. 将下载的 `zed-ai-dsh-plugin-v0.3.zip` 安装并启用到 DSH 桌面端（插件 ID：`@local/zed-ai`）。
 2. 在游戏内打开设置第 1 页，将 **接入模式** 切换为 **DSH 联机陪玩**。
 3. 启动游戏并加载存档后，DSH 侧边栏 **ZED AI** 面板会自动同步显示角色、人设、任务与当前状态，无需在模组内填写 API Key。
 
@@ -105,13 +105,13 @@
 
 ## Quick Start (English)
 
-**AI Companion (Beta v0.2)** for **ZED ZONE** supports **all 10 official game languages** (auto-following your game language or selectable manually under Options).
+**AI Companion (Beta v0.3)** for **ZED ZONE** supports **all 10 official game languages** (auto-following your game language or selectable manually under Options).
 
 1. **Install Prerequisites**: Subscribe to **[ZED ZONE Code Mod Loader (3834614258)](https://steamcommunity.com/sharedfiles/filedetails/?id=3834614258)** first and run its `install.cmd` once, OR place `ZEDAI.dll` (from GitHub Releases) into `<Game Dir>\BepInEx\plugins\ZEDAI.dll`.
 2. **Open Settings**: Press `ESC` in-game → **Options** → **AI Companion** → **Open AI Companion Settings**.
 3. **Choose Connection Mode**:
    - **API Mode**: Pick Chat Completions / Anthropic Messages / OpenAI Responses / Ollama, enter your Base URL, Model name, and API Key (encrypted locally via Windows DPAPI), then click **Test Connection**.
-   - **DSH Mode**: Install `@local/zed-ai` (`zed-ai-dsh-plugin-v0.2.zip`) into DeepSeek Harness Desktop and switch Connection Mode to **DSH**.
+   - **DSH Mode**: Install `@local/zed-ai` (`zed-ai-dsh-plugin-v0.3.zip`) into DeepSeek Harness Desktop and switch Connection Mode to **DSH**.
 4. **Choose Companion Form**:
    - **Chat Companion**: Natural conversation via the left-side game chat box (`Enter`), anti-repetition alerts, and strictly fair advice/helper tasks using only known recipes & inspected containers.
    - **Hired NPC**: Commands recruited NPCs strictly within built-in NPC rules (Singleplayer / Co-op Host only).

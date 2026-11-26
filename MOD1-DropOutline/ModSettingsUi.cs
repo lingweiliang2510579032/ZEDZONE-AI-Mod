@@ -139,6 +139,7 @@ namespace Dropoutline
             if (langChanged || (!string.IsNullOrEmpty(_lastRenderedLang) && _lastRenderedLang != ModLocalization.Current))
             {
                 _lastRenderedLang = ModLocalization.Current;
+                _winActionMessage = "";
                 RefreshLocalizedEntryTexts();
                 if (IsConfigWindowOpen)
                     RenderConfigWindow();
@@ -479,6 +480,7 @@ namespace Dropoutline
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(i * 252f, 0f), new Vector2(244f, 40f), 16, () =>
                         {
+                            _winActionMessage = "";
                             _winTab = tabIdx;
                             RenderConfigWindow();
                         });
@@ -1294,7 +1296,7 @@ namespace Dropoutline
                 new Vector2(-16f, 0f), new Vector2(380f, 42f), 16, null);
             btn.GetComponent<Image>().color = new Color(0.17f, 0.28f, 0.17f, 0.96f);
             var lbl = btn.GetComponentInChildren<Text>(true);
-            if (lbl != null) ApplyBestFit(lbl, 12, 16, true);
+            if (lbl != null) ApplyBestFit(lbl, 11, 15, true);
 
             int currentIndex = cur;
             btn.GetComponent<Button>().onClick.AddListener(DelegateSupport.ConvertDelegate<UnityAction>((Action)(() =>
@@ -1919,7 +1921,7 @@ namespace Dropoutline
             text.color = Color.white;
             text.text = label ?? "";
             text.raycastTarget = false;
-            ApplyBestFit(text, 12, fontSize, true);
+            ApplyBestFit(text, 10, fontSize, true);
             return rt.gameObject;
         }
 

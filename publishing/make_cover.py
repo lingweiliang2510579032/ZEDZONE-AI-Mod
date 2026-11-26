@@ -32,7 +32,7 @@ d.rectangle((46, 86, 58, 286), fill="#9ae265")
 
 text(88, 76, "ZED ZONE  ·  官方 10 语言支持  ·  MIT 开源", 23, "#96b5b4")
 text(86, 118, "AI伴侣", 88, "#f3f7f1", True)
-text(406, 148, "测试版 v0.2", 40, "#9ae265", True)
+text(406, 148, "测试版 v0.3", 40, "#9ae265", True)
 text(90, 232, "API 直连大模型  ·  DSH 本地 Agent 联动", 30, "#cbe0be")
 
 cards = [

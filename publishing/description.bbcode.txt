@@ -1,4 +1,4 @@
-[h1]AI伴侣（测试版v0.2）[/h1]
+[h1]AI伴侣（测试版v0.3）[/h1]
 《隔离区（ZED ZONE）》的 AI 伙伴模组（MIT 开源），完整支持[b]游戏本体全部 10 种官方语言[/b]，提供 [b]API 直连大模型[/b] 与 [b]DSH 本地智能体[/b] 两种接入方式，并可在[b]聊天陪伴 / 接管雇佣 NPC / 联机玩家[/b]三种表现形式间随时切换。
 
 [h2]一、安装前必看（重要）[/h2]
@@ -17,7 +17,7 @@
 [h2]三、两种接入模式[/h2]
 [olist]
 [*][b]API 模式（多数玩家推荐）[/b]：在设置第 3 页选协议（Chat Completions / Anthropic Messages / Responses / 本地 Ollama），填写 BaseUrl、模型名与 API Key（本机 Windows 加密保存，不存明文），点「测试连接」成功即可使用。
-[*][b]DSH 模式（配合 DeepSeek Harness 使用）[/b]：在游戏设置第 1 页切换为 DSH 模式，并在 DSH 桌面端安装同版本 [code]zed-ai-dsh-plugin-v0.2.zip[/code] 插件（可从 GitHub Releases 下载），即可由本地智能体思考并保持同角色跨地图长期记忆。仅用 API 模式无需安装 DSH 插件。
+[*][b]DSH 模式（配合 DeepSeek Harness 使用）[/b]：在游戏设置第 1 页切换为 DSH 模式，并在 DSH 桌面端安装同版本 [code]zed-ai-dsh-plugin-v0.3.zip[/code] 插件（可从 GitHub Releases 下载），即可由本地智能体思考并保持同角色跨地图长期记忆。仅用 API 模式无需安装 DSH 插件。
 [/olist]
 
 [h2]四、三种表现形式与单联机适配[/h2]

@@ -1,4 +1,4 @@
-[h1]AI Companion (Beta v0.2)[/h1]
+[h1]AI Companion (Beta v0.3)[/h1]
 An open-source AI companion mod for [b]ZED ZONE[/b] (MIT License), featuring [b]full support for all 10 official game languages[/b], dual connection backends ([b]Direct LLM API[/b] or [b]DSH Local Agent[/b]), and 3 distinct companion forms ([b]Chat Companion / Hired NPC / Co-op Player[/b]).
 
 [h2]1. Prerequisites & Installation[/h2]
@@ -17,7 +17,7 @@ An open-source AI companion mod for [b]ZED ZONE[/b] (MIT License), featuring [b]
 [h2]3. Connection Modes[/h2]
 [olist]
 [*][b]API Mode (Recommended for most players)[/b]: Choose Chat Completions, Anthropic Messages, OpenAI Responses, or local Ollama under Tab 3, fill in your Base URL, Model name, and API Key (encrypted locally via Windows DPAPI), then click [b]Test Connection[/b].
-[*][b]DSH Mode (DeepSeek Harness)[/b]: Switch Connection Mode to DSH on Tab 1 and install the matching [code]zed-ai-dsh-plugin-v0.2.zip[/code] (from GitHub Releases) in DSH Desktop. Not required if you only use API Mode.
+[*][b]DSH Mode (DeepSeek Harness)[/b]: Switch Connection Mode to DSH on Tab 1 and install the matching [code]zed-ai-dsh-plugin-v0.3.zip[/code] (from GitHub Releases) in DSH Desktop. Not required if you only use API Mode.
 [/olist]
 
 [h2]4. Three Companion Forms & Solo/Co-op Adaptation[/h2]

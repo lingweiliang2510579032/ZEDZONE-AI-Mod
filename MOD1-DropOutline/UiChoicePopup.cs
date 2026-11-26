@@ -33,6 +33,7 @@ namespace Dropoutline
                 var scaler = go.AddComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.matchWidthOrHeight = 0.5f;
                 go.AddComponent<GraphicRaycaster>();
                 _root = go;
                 _openedAt = Time.unscaledTime;

@@ -22,8 +22,8 @@ namespace Dropoutline
     public class DropOutlinePlugin : BasePlugin
     {
         public const string PluginGUID = "zed.ai";
-        public const string PluginName = "AI伴侣（测试版v0.2）";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginName = "AI伴侣（测试版v0.3）";
+        public const string PluginVersion = "0.3.0";
 
         internal static ManualLogSource L;
         internal static bool ShuttingDown;
@@ -133,11 +133,16 @@ namespace Dropoutline
         public static void PatchGameOptionsPanel(Harmony harmony)
         {
             var postfix = new HarmonyMethod(typeof(AiPatches), nameof(AfterGameOptionsOpen));
+            MethodInfo preferred = null;
+            MethodInfo fallback = null;
             foreach (var m in typeof(GameOptionsPanel).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 if (m.Name != nameof(GameOptionsPanel.OpenPanel) || m.IsGenericMethod) continue;
-                harmony.Patch(m, postfix: postfix);
+                if (m.GetParameters().Length == 1) { preferred = m; break; }
+                if (fallback == null) fallback = m;
             }
+            var target = preferred ?? fallback;
+            if (target != null) harmony.Patch(target, postfix: postfix);
         }
 
         static void AfterGameOptionsOpen(GameOptionsPanel __instance)

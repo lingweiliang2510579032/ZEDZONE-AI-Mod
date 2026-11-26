@@ -1,4 +1,4 @@
-# AI伴侣（测试版v0.2） / AI Companion (Beta v0.2) · 使用说明
+# AI伴侣（测试版v0.3） / AI Companion (Beta v0.3) · 使用说明
 
 ## 一、前置要求（非常重要）
 
@@ -20,7 +20,7 @@
   4. 点击 **测试连接**，看到连接成功提示即可开始游玩。
 
 ### 2. DSH 模式（配合 DeepSeek Harness 本地智能体）
-- 仅使用 DSH 模式才需要安装配套插件：从 GitHub Releases 下载同版本 `zed-ai-dsh-plugin-v0.2.zip` 并安装到 DSH 桌面端，在设置第 1 页将 **接入模式** 切换为 **DSH** 即可联动。
+- 仅使用 DSH 模式才需要安装配套插件：从 GitHub Releases 下载同版本 `zed-ai-dsh-plugin-v0.3.zip` 并安装到 DSH 桌面端，在设置第 1 页将 **接入模式** 切换为 **DSH** 即可联动。
 
 ## 四、三种表现形式（单人与联机自适应）
 
@@ -40,7 +40,7 @@
 
 1. Subscribe to **[ZED ZONE Code Mod Loader (3834614258)](https://steamcommunity.com/sharedfiles/filedetails/?id=3834614258)** and run its `install.cmd` once before using this mod.
 2. In-game press `ESC` → **Options** → **AI Companion** → **Open AI Companion Settings**. All 10 official base-game languages are supported.
-3. Choose **API Mode** (fill Base URL / Model / Key in Tab 3 and click **Test Connection**) or **DSH Mode** (install `zed-ai-dsh-plugin-v0.2.zip` in DSH Desktop).
+3. Choose **API Mode** (fill Base URL / Model / Key in Tab 3 and click **Test Connection**) or **DSH Mode** (install `zed-ai-dsh-plugin-v0.3.zip` in DSH Desktop).
 4. Pick your preferred form (**Chat Companion / Hired NPC / Co-op Player**) and press **`Enter`** in solo or co-op to chat via the left-side game chat box.
 
 ---

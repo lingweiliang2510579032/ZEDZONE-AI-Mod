@@ -42,6 +42,20 @@ namespace Dropoutline
         {
             _pendingEcho.Clear();
             _nextEnsureAt = 0f;
+            try
+            {
+                if (!NetworkManager.isOnline)
+                {
+                    NetChatSync.instance?.m_log?.Clear();
+                    var bar = NetChatBar.instance;
+                    if (bar != null)
+                    {
+                        bar.m_feed?.Clear();
+                        bar.m_linesDirty = true;
+                    }
+                }
+            }
+            catch { }
         }
 
         /// <summary>单人模式下是否启用官方左侧聊天栏与输入框。</summary>
@@ -79,7 +93,7 @@ namespace Dropoutline
             }
         }
 
-        private static bool HasFocusedInputField()
+        internal static bool HasFocusedInputField()
         {
             try
             {
@@ -97,6 +111,52 @@ namespace Dropoutline
             }
             catch { }
             return false;
+        }
+
+        /// <summary>单人模式下接管 NetChatBar.Update，避开原版 isOnline/worldReady 门禁同时保留其余生命周期逻辑。</summary>
+        internal static bool TryHandleOfflineUpdate(NetChatBar bar)
+        {
+            try
+            {
+                if (NetworkManager.isOnline) return false;
+                if (!ShouldEnableSingleplayerOfficialChat() || DropOutlinePlugin.WorldTearingDown ||
+                    GameController.instance == null || bar == null)
+                    return false;
+
+                bar.EnsureChatSubscription();
+                if (!bar.m_open)
+                {
+                    if (bar.m_padOpenUntil > 0f)
+                    {
+                        if (Time.unscaledTime > bar.m_padOpenUntil)
+                            bar.m_padOpenUntil = -1f;
+                        else if (!NetChatBar.IsControllerWheelShowing() && bar.CanOpen())
+                        {
+                            bar.m_padOpenUntil = -1f;
+                            bar.Open(true);
+                        }
+                    }
+                    else if (NetChatBar.IsOpenKeyDown(out bool byPad) && bar.CanOpen())
+                    {
+                        bar.Open(byPad);
+                    }
+                }
+                else
+                {
+                    bar.UpdateOpen();
+                }
+
+                if (NetChatBar.isTypingChat)
+                    NetChatBar.FreezeLocalMovement();
+
+                bar.UpdateVisual();
+                return true;
+            }
+            catch (Exception e)
+            {
+                DropOutlinePlugin.L.LogWarning($"[单人官方聊天] Update 接管异常: {e.Message}");
+                return false;
+            }
         }
 
         /// <summary>单人进档后按需初始化官方聊天同步器与左侧聊天栏 UI。</summary>
@@ -246,20 +306,28 @@ namespace Dropoutline
             AiNetChat.OnAppend(senderId, senderName, text);
         }
 
+        [HarmonyPatch(typeof(ZedZone.Net.NetChatBar), "Update")]
+        [HarmonyPrefix]
+        static bool BeforeUpdate(ZedZone.Net.NetChatBar __instance)
+        {
+            return !AiNetChat.TryHandleOfflineUpdate(__instance);
+        }
+
         [HarmonyPatch(typeof(ZedZone.Net.NetChatBar), "FeedAllowed")]
         [HarmonyPostfix]
         static void AfterFeedAllowed(ref bool __result)
         {
-            if (!__result && AiNetChat.ShouldEnableSingleplayerOfficialChat())
-                __result = true;
+            if (__result && (ModSettingsUi.IsConfigWindowOpen || UiChoicePopup.IsOpen))
+                __result = false;
         }
 
         [HarmonyPatch(typeof(ZedZone.Net.NetChatBar), "CanOpen")]
         [HarmonyPostfix]
         static void AfterCanOpen(ref bool __result)
         {
-            if (!__result && AiNetChat.CanOpenSingleplayerChat())
-                __result = true;
+            if (__result && (ModSettingsUi.IsConfigWindowOpen || UiChoicePopup.IsOpen ||
+                             ChatInput.IsOpen || AiNetChat.HasFocusedInputField()))
+                __result = false;
         }
 
         [HarmonyPatch(typeof(ZedZone.Net.NetChatSync), nameof(ZedZone.Net.NetChatSync.SendChat), new Type[] { typeof(string) })]

@@ -8,35 +8,35 @@
   "legalRequired": false,
   "details": {
     "id": 3840378952,
-    "title": "AI伴侣（测试版v0.2）",
+    "title": "AI伴侣（测试版v0.3）",
     "owner": 76561198272019943,
     "creatorApp": 1211600,
     "consumerApp": 1211600,
     "visibility": 0,
-    "fileSize": 638668,
-    "previewSize": 139928,
+    "fileSize": 648465,
+    "previewSize": 140015,
     "children": [
       3834614258
     ]
   },
-  "uploadCall": "15614636428470479140",
+  "uploadCall": "3259478169123577612",
   "uploaded": true,
-  "packageHash": "108964869f7d8808ca8f8b3aeb5ba7b5d8927b1f7eb06138e17a53ed8634c2c5",
+  "packageHash": "c7593000f45e4c50141d3e6fac99ce4bca68cd7d8bd0681683670f58641b76b2",
   "dependencyCall": "10609248263945009919",
   "dependencyVerified": true,
   "publicCall": "8659477610084198191",
   "publicVerified": true,
   "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3840378952",
-  "uploadEnCall": "9720037882781086839",
+  "uploadEnCall": "13598279370450594160",
   "detailsEn": {
     "id": 3840378952,
-    "title": "AI Companion (Beta v0.2)",
+    "title": "AI Companion (Beta v0.3)",
     "owner": 76561198272019943,
     "creatorApp": 1211600,
     "consumerApp": 1211600,
     "visibility": 0,
-    "fileSize": 638668,
-    "previewSize": 139928,
+    "fileSize": 648465,
+    "previewSize": 140015,
     "children": [
       3834614258
     ]

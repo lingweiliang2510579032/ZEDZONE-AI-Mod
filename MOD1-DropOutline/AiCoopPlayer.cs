@@ -264,6 +264,8 @@ namespace Dropoutline
                             "连线阶段:{0} {1}", "Connecting: {0} {1}", "Verbindung: {0} {1}", "Conectando: {0} {1}",
                             "Connexion : {0} {1}", "接続中:{0} {1}", "연결 중:{0} {1}", "Łączenie: {0} {1}", "Conectando: {0} {1}", "Подключение: {0} {1}"),
                             ncc.joinPhase, ncc.joinStatusLocalized ?? ncc.joinStatus);
+                    if (!AiSaveContext.Active)
+                        return ModLocalization.NetworkRoleLabel("menu");
                     return string.IsNullOrEmpty(_lastJoinResult) ? ModLocalization.NetworkRoleLabel("offline") : _lastJoinResult;
                 }
 

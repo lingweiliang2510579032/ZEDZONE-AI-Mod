@@ -7,7 +7,7 @@ namespace Dropoutline
     // Pure managed presentation only. Never schedules a gameplay/task action.
     internal sealed class AiSpeechQueue
     {
-        internal const int MaxLines = 3, MaxLineCharacters = 36, MaxTotalCharacters = 100;
+        internal const int MaxLines = 3, MaxLineCharacters = 36, MaxNarrowLineCharacters = 30, MaxTotalCharacters = 100;
         internal const float IntervalSeconds = 2.5f;
         internal readonly struct Line
         {
@@ -46,8 +46,28 @@ namespace Dropoutline
             return true;
         }
         private static bool Boundary(char c) => c == '。' || c == '！' || c == '？' || c == '!' || c == '?' || c == '；' || c == ';' || c == '\n';
-        private static bool MinorBoundary(char c) => c == '，' || c == ',' || c == '：' || c == ':' || c == '、' || c == '～' || c == '~' || c == '—' || c == '–' || c == '…' || char.IsWhiteSpace(c);
+        private static bool IsSentenceBoundary(string text, int index)
+        {
+            char c = text[index];
+            if (Boundary(c)) return true;
+            if (c != '.') return false;
+            bool prevDot = index > 0 && text[index - 1] == '.';
+            bool nextContinues = index + 1 < text.Length && (char.IsLetterOrDigit(text[index + 1]) || text[index + 1] == '.');
+            return !prevDot && !nextContinues;
+        }
+        private static bool IsClauseBoundary(char c) => c == '，' || c == ',' || c == '：' || c == ':' || c == '、' || c == '～' || c == '~' || c == '—' || c == '–' || c == '…';
         private static bool ClosingTrail(char c) => c == '”' || c == '"' || c == '’' || c == '\'' || c == '」' || c == '』' || c == '）' || c == ')' || c == '】' || c == ']';
+        private static bool IsWideScript(char c) =>
+            (c >= '\u3040' && c <= '\u30FF') || (c >= '\u3400' && c <= '\u9FFF') ||
+            (c >= '\uAC00' && c <= '\uD7AF') || (c >= '\uF900' && c <= '\uFAFF');
+        private static int EffectiveLineLimit(string text, int start, int remainingBudget)
+        {
+            int cap = Math.Min(MaxLineCharacters, remainingBudget);
+            int scan = Math.Min(text.Length, start + MaxLineCharacters);
+            for (int i = start; i < scan; i++)
+                if (IsWideScript(text[i])) return cap;
+            return Math.Min(MaxNarrowLineCharacters, remainingBudget);
+        }
         private static bool IsTokenChar(char c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
             (c >= '\u00C0' && c <= '\u024F') || (c >= '\u0400' && c <= '\u04FF') || c == '_' || c == '\'';
         private static int Width(string text, int index) => char.IsHighSurrogate(text[index]) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]) ? 2 : 1;
@@ -127,12 +147,13 @@ namespace Dropoutline
             {
                 while (start < text.Length && char.IsWhiteSpace(text[start])) start++;
                 if (start >= text.Length) break;
-                int end = start, count = 0, stop = -1, minorStop = -1;
-                int limit = Math.Min(MaxLineCharacters, MaxTotalCharacters - total);
+                int end = start, count = 0, stop = -1, clauseStop = -1;
+                int limit = EffectiveLineLimit(text, start, MaxTotalCharacters - total);
                 while (end < text.Length && count < limit)
                 {
+                    int charAt = end;
                     char c = text[end]; end += Width(text, end); count++;
-                    if (Boundary(c))
+                    if (IsSentenceBoundary(text, charAt))
                     {
                         while (end < text.Length && count < limit && ClosingTrail(text[end]))
                         {
@@ -140,7 +161,7 @@ namespace Dropoutline
                         }
                         stop = end; break;
                     }
-                    if (MinorBoundary(c)) minorStop = end;
+                    if (IsClauseBoundary(c)) clauseStop = end;
                 }
                 if (stop > start)
                 {
@@ -148,8 +169,8 @@ namespace Dropoutline
                 }
                 else if (end < text.Length)
                 {
-                    // 无强句末标点时优先在小句标点（，：、～等）断行，其次退回数字/英文词边界，避免在“词条点|5”处硬截断
-                    end = minorStop > start ? minorStop : BackoffMidToken(text, start, end);
+                    // 无强句末标点时优先在小句标点（，：、～等）断行，其次退回词/数字边界，避免截断单词或数字
+                    end = clauseStop > start ? clauseStop : BackoffMidToken(text, start, end);
                 }
                 string part = text.Substring(start, end - start).Trim();
                 start = end;
@@ -162,7 +183,7 @@ namespace Dropoutline
                 string part = output[last];
                 int origChars = Characters(part);
                 bool shortened = false;
-                if (Boundary(part[part.Length - 1]))
+                if (IsSentenceBoundary(part, part.Length - 1))
                 {
                     part = Prefix(part, Math.Max(0, origChars - 1));
                     shortened = true;
@@ -178,7 +199,8 @@ namespace Dropoutline
                 }
                 part = TrimTrailingMinorPunct(part);
                 if (Characters(part) < origChars) shortened = true;
-                if (!shortened && (origChars >= MaxLineCharacters || total >= MaxTotalCharacters))
+                int lastCap = EffectiveLineLimit(output[last], 0, MaxTotalCharacters);
+                if (!shortened && (origChars >= lastCap || total >= MaxTotalCharacters))
                     part = TrimTrailingMinorPunct(Prefix(part, Math.Max(0, Characters(part) - 1)));
                 if (part.Length == 0) part = Prefix(output[last], Math.Max(0, origChars - 1)).TrimEnd();
                 output[last] = part + "…";
